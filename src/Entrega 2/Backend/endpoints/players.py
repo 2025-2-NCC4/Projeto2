@@ -1,4 +1,3 @@
-# endpoints/players.py
 from flask import Blueprint, jsonify, request
 from db import get_db
 

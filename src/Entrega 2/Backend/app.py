@@ -1,8 +1,6 @@
-# app.py
 from flask import Flask, jsonify
 from flask_cors import CORS
 from db import close_db
-# 👇 importa e registra os blueprints (arquivos estão na raiz do projeto)
 from endpoints.players import bp as players_bp
 from endpoints.transactions import bp as transactions_bp
 from endpoints.stores import bp as stores_bp
@@ -23,13 +21,10 @@ def create_app():
     def health():
         return jsonify({"status": "ok"}), 200
 
-    
-
     app.register_blueprint(players_bp)
     app.register_blueprint(transactions_bp)
     app.register_blueprint(stores_bp)
     app.register_blueprint(simulations_bp)
-    # ☝️ agora /api/players/ existe
 
     app.teardown_appcontext(close_db)
     return app
