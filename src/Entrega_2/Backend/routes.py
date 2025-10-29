@@ -49,8 +49,8 @@ def players():
     body = players_ctrl(**payload)
     return jsonify(body), 200
 
-@bp.get("/simulations")
-@bp.get("/simulations/")
+@bp.get("/simulacao")
+@bp.get("/simulacao/")
 def simulations():
     payload = dict(
         filters={
@@ -84,8 +84,8 @@ def simulations():
     body = simulations_ctrl(**payload)
     return jsonify(body), 200
 
-@bp.get("/stores")
-@bp.get("/stores/")
+@bp.get("/lojas")
+@bp.get("/lojas/")
 def stores():
     payload = dict(
         filters={
@@ -114,8 +114,8 @@ def stores():
     body = stores_ctrl(**payload)
     return jsonify(body), 200
 
-@bp.get("/transactions")
-@bp.get("/transactions/")
+@bp.get("/transacoes")
+@bp.get("/transacoes/")
 def transactions():
     payload = dict(
         filters={
