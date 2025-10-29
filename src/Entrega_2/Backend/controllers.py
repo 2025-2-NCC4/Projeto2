@@ -1,18 +1,17 @@
-from models import buscar_base_lojas, buscar_base_simulacao, buscar_base_players, buscar_base_transacoes
+from models import list_players, list_simulations, list_stores, list_transactions
 
+def players_ctrl(**kw):
+    data, _ = list_players(**kw)
+    return data
 
-def listar_base_players():
-    dados = buscar_base_players()
-    return dados, 200
+def simulations_ctrl(**kw):
+    data, _ = list_simulations(**kw)
+    return data
 
-def listar_base_simulacao():
-    dados = buscar_base_simulacao()
-    return dados, 200
+def stores_ctrl(**kw):
+    data, _ = list_stores(**kw)
+    return data
 
-def listar_base_transacoes():
-    dados = buscar_base_transacoes()
-    return dados, 200
-
-def listar_base_lojas():
-    dados = buscar_base_lojas()
-    return dados, 200
+def transactions_ctrl(**kw):
+    data, _ = list_transactions(**kw)
+    return data
