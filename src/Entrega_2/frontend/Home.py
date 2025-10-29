@@ -6,7 +6,7 @@ st.set_page_config(page_title="PicMoney – Dashboards", layout="wide")
 st.title("PicMoney – Dashboards")
 st.write("Use o menu à esquerda para acessar: CEO ou CFO.")
 
-df_players = get_json_df("/players")
+df_players = get_json_df("/players", {"sexo": "Feminino"})
 df_lojas = get_json_df("/lojas")
 df_simulacao = get_json_df("/simulacao")
 df_transacoes = get_json_df("/transacoes")
