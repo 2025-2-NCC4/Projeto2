@@ -1,0 +1,210 @@
+
+\documentclass[12pt]{article}
+
+% Idioma e codificação
+\usepackage[brazil]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+% Fonte semelhante à Arial
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+
+% Espaçamento e margens
+\usepackage{setspace}
+\onehalfspacing
+\usepackage{geometry}
+\geometry{a4paper, left=2cm, right=2cm, top=2cm, bottom=2cm}
+\usepackage{float}
+
+% Parágrafo
+\usepackage{indentfirst}
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0pt}
+
+% Títulos personalizados
+\usepackage{titlesec}
+\titleformat{\section}
+  {\normalfont\sffamily\bfseries\fontsize{20}{20}\selectfont}
+  {\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\sffamily\bfseries\fontsize{14}{14}\selectfont}
+  {\thesubsection}{1em}{}
+
+% Legendas e tabelas
+\usepackage[font={sf,footnotesize},labelfont=bf,labelsep=colon,justification=centering]{caption}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{array}
+
+% -------- Variáveis com defaults (podem ser sobrescritas em valores.tex) --------
+\providecommand{\Periodo}{[PREENCHER]}
+\providecommand{\TransacoesPeriodo}{[PREENCHER]}
+\providecommand{\UsuariosUnicos}{[PREENCHER]}
+\providecommand{\DiasAnalisados}{[PREENCHER]}
+
+\providecommand{\DAUmedio}{[PREENCHER]}
+\providecommand{\DAUmin}{[PREENCHER]}
+\providecommand{\DAUmax}{[PREENCHER]}
+
+\providecommand{\WAUSem1}{[PREENCHER]}
+\providecommand{\WAUSem2}{[PREENCHER]}
+\providecommand{\WAUSem3}{[PREENCHER]}
+\providecommand{\WAUSem4}{[PREENCHER]}
+\providecommand{\WAUMedio}{[PREENCHER]}
+
+\providecommand{\MAU}{[PREENCHER]}
+
+\providecommand{\RetencaoBase}{[PREENCHER]}
+\providecommand{\RetencaoRetornaram}{[PREENCHER]}
+\providecommand{\RetencaoTaxa}{[PREENCHER]}
+
+\providecommand{\ChurnInativos}{[PREENCHER]}
+\providecommand{\ChurnTotalUsuarios}{[PREENCHER]}
+\providecommand{\ChurnTaxa}{[PREENCHER]}
+
+\providecommand{\TempoMedioMin}{[PREENCHER]}
+\providecommand{\TempoMedioHM}{[PREENCHER]}
+
+\providecommand{\TotalSessoes}{[PREENCHER]}
+\providecommand{\TotalUsuarios}{[PREENCHER]}
+\providecommand{\SessoesPorUsuario}{[PREENCHER]}
+
+% -------- Input de valores externos --------
+\IfFileExists{valores.tex}{\input{valores.tex}}{}  % se existir, sobrescreve os defaults
+
+\begin{document}
+\begin{center}
+\textbf{Fundação Escola de Comércio Álvares Penteado (FECAP)}\\
+\textbf{Curso de Ciência da Computação - 4º Semestre}\\[2cm]
+
+\vspace*{\fill}
+\textbf{\Large Relatório de Índices de Engajamento PicMoney}\\[0.5cm]
+\textbf{Entrega 2 – Contabilidade e Finanças}\\[2cm]
+\end{center}
+
+\noindent\hspace*{6cm}\textbf{Caroliny Rossi Bittencourt – 24025959}\\
+\hspace*{6cm}\textbf{Rafael Alves dos Santos Guimarães – 24025724}\\
+\hspace*{6cm}\textbf{Duda Lucena Miguel – 24025889}\\
+\hspace*{6cm}\textbf{Isadora Teixeira Santoma – 24026458}\\[2cm]
+
+\vspace*{\fill}
+\begin{center}
+\vfill
+\textbf{São Paulo – 2025}
+\end{center}
+\newpage
+\onehalfspacing
+
+%--------------------------------------------------------------
+% CONTEÚDO
+%--------------------------------------------------------------
+
+\section*{Visão Geral do Desempenho}
+Período analisado: \textbf{\Periodo}.
+
+\begin{center}
+\begin{tabular}{>{\bfseries}p{0.35\linewidth} p{0.55\linewidth}}
+\toprule
+Transações no período & \TransacoesPeriodo \\
+Usuários únicos & \UsuariosUnicos \\
+Dias analisados & \DiasAnalisados \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section*{Usuários Ativos Diários (DAU)}
+\begin{center}
+\begin{tabular}{>{\bfseries}p{0.35\linewidth} p{0.55\linewidth}}
+\toprule
+DAU médio & \DAUmedio \\
+DAU mínimo & \DAUmin \\
+DAU máximo & \DAUmax \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section*{Usuários Ativos Semanais (WAU)}
+\begin{center}
+\begin{tabular}{>{\bfseries}p{0.35\linewidth} p{0.55\linewidth}}
+\toprule
+Semana 1 & \WAUSem1 \\
+Semana 2 & \WAUSem2 \\
+Semana 3 & \WAUSem3 \\
+Semana 4 & \WAUSem4 \\
+\midrule
+Média semanal (WAU médio) & \WAUMedio \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section*{Usuários Ativos Mensais (MAU)}
+\begin{center}
+\begin{tabular}{>{\bfseries}p{0.35\linewidth} p{0.55\linewidth}}
+\toprule
+MAU (mês do relatório) & \MAU \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section*{Taxa de Retenção (30 dias)}
+\begin{center}
+\begin{tabular}{>{\bfseries}p{0.45\linewidth} p{0.45\linewidth}}
+\toprule
+Usuários iniciais (baseline) & \RetencaoBase \\
+Usuários que retornaram (30d) & \RetencaoRetornaram \\
+Taxa de retenção (30d) & \RetencaoTaxa \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section*{Taxa de Churn (Inatividade)}
+\begin{center}
+\begin{tabular}{>{\bfseries}p{0.45\linewidth} p{0.45\linewidth}}
+\toprule
+Usuários inativos ($\geq$14d) & \ChurnInativos \\
+Total de usuários & \ChurnTotalUsuarios \\
+Taxa de churn & \ChurnTaxa \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section*{Tempo Médio na Aplicação}
+\begin{center}
+\begin{tabular}{>{\bfseries}p{0.45\linewidth} p{0.45\linewidth}}
+\toprule
+Tempo médio por sessão (min) & \TempoMedioMin \\
+Tempo médio convertido (h:m) & \TempoMedioHM \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section*{Sessões por Usuário}
+\begin{center}
+\begin{tabular}{>{\bfseries}p{0.45\linewidth} p{0.45\linewidth}}
+\toprule
+Total de sessões & \TotalSessoes \\
+Total de usuários & \TotalUsuarios \\
+Média de sessões por usuário & \SessoesPorUsuario \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section*{Resumo Executivo}
+\begin{center}
+\begin{tabular}{>{\bfseries}p{0.3\linewidth} p{0.3\linewidth} p{0.35\linewidth}}
+\toprule
+Indicador & Valor & Fórmula \\
+\midrule
+DAU & \DAUmedio & COUNT(DISTINCT usuários/dia) \\
+WAU & \WAUMedio & COUNT(DISTINCT usuários/semana) \\
+MAU & \MAU & COUNT(DISTINCT usuários/mês) \\
+Retenção (30d) & \RetencaoTaxa & (Retornaram / Iniciais) $\times$ 100 \\
+Churn & \ChurnTaxa & (Inativos / Total) $\times$ 100 \\
+Tempo médio & \TempoMedioHM & $\sum$ duração / sessões \\
+Sessões por usuário & \SessoesPorUsuario & Total sessões / usuários \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\end{document}
