@@ -1,6 +1,6 @@
-PWD c:\Users\dudal\OneDrive\Documentos\GitHub\Projeto2\documentos\Entrega 2\Contabilidade_e_Financas\relatorio
+PWD c:\Users\dudal\OneDrive\Documentos\GitHub\Projeto2\documentos\Entrega 2\Contabilidade_e_Financas\Componentes LaTeX do Relatorio
 INPUT C:\Users\dudal\AppData\Local\MiKTeX\miktex\data\le\pdftex\pdflatex.fmt
-INPUT c:\Users\dudal\OneDrive\Documentos\GitHub\Projeto2\documentos\Entrega 2\Contabilidade_e_Financas\relatorio\Relatório Indice de Engajamento PicMoney.tex
+INPUT c:\Users\dudal\OneDrive\Documentos\GitHub\Projeto2\documentos\Entrega 2\Contabilidade_e_Financas\Componentes LaTeX do Relatorio\Relatório Indice de Engajamento PicMoney.tex
 OUTPUT Relatório Indice de Engajamento PicMoney.log
 INPUT C:\Users\dudal\AppData\Local\Programs\MiKTeX\tex\latex\base\article.cls
 INPUT C:\Users\dudal\AppData\Local\Programs\MiKTeX\tex\latex\base\article.cls
