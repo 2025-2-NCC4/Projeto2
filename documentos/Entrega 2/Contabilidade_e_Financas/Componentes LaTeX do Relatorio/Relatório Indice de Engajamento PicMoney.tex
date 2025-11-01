@@ -1,0 +1,352 @@
+
+\documentclass[12pt]{article}
+
+% Idioma e codificação
+\usepackage[brazil]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+% Fonte semelhante à Arial
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+
+% Espaçamento e margens
+\usepackage{setspace}
+\onehalfspacing
+\usepackage{geometry}
+\geometry{a4paper, left=2cm, right=2cm, top=2cm, bottom=2cm}
+\usepackage{float}
+
+% Parágrafo
+\usepackage{indentfirst}
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0pt}
+
+% Títulos personalizados
+\usepackage{titlesec}
+\titleformat{\section}
+  {\normalfont\sffamily\bfseries\fontsize{20}{20}\selectfont}
+  {\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\sffamily\bfseries\fontsize{14}{14}\selectfont}
+  {\thesubsection}{1em}{}
+
+% Legendas e tabelas
+\usepackage[font={sf,footnotesize},labelfont=bf,labelsep=colon,justification=centering]{caption}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{array}
+
+% -------- Variáveis com defaults (sobrescritas por valores_v4.tex) --------
+\providecommand{\Periodo}{[PREENCHER]}
+\providecommand{\TransacoesPeriodo}{[PREENCHER]}
+\providecommand{\UsuariosUnicos}{[PREENCHER]}
+\providecommand{\DiasAnalisados}{[PREENCHER]}
+
+\providecommand{\DAUmedio}{[PREENCHER]}
+\providecommand{\WAUMedio}{[PREENCHER]}
+\providecommand{\MAU}{[PREENCHER]}
+
+\providecommand{\RetencaoBase}{[PREENCHER]}
+\providecommand{\RetencaoRetornaram}{[PREENCHER]}
+\providecommand{\RetencaoTaxa}{[PREENCHER]}
+
+\providecommand{\ChurnInativos}{[PREENCHER]}
+\providecommand{\ChurnTotalUsuarios}{[PREENCHER]}
+\providecommand{\ChurnTaxa}{[PREENCHER]}
+
+\providecommand{\TempoMedioHM}{[PREENCHER]}
+\providecommand{\TempoMedioMin}{[PREENCHER]}
+
+\providecommand{\TotalSessoes}{[PREENCHER]}
+\providecommand{\TotalUsuarios}{[PREENCHER]}
+\providecommand{\SessoesPorUsuario}{[PREENCHER]}
+
+% Inatividade (0-7 / 8-14 / 15-21 / 22-31)
+\providecommand{\InatA}{[PREENCHER]}\providecommand{\InatAperc}{[PREENCHER]}
+\providecommand{\InatB}{[PREENCHER]}\providecommand{\InatBperc}{[PREENCHER]}
+\providecommand{\InatC}{[PREENCHER]}\providecommand{\InatCperc}{[PREENCHER]}
+\providecommand{\InatD}{[PREENCHER]}\providecommand{\InatDperc}{[PREENCHER]}
+
+% Distribuição de duração de sessões
+\providecommand{\DurZeroAQuinze}{[PREENCHER]}\providecommand{\DurZeroAQuinzePct}{[PREENCHER]}
+\providecommand{\DurQuinzeATrinta}{[PREENCHER]}\providecommand{\DurQuinzeATrintaPct}{[PREENCHER]}
+\providecommand{\DurTrintaASessenta}{[PREENCHER]}\providecommand{\DurTrintaASessentaPct}{[PREENCHER]}
+\providecommand{\DurUmaADuasHoras}{[PREENCHER]}\providecommand{\DurUmaADuasHorasPct}{[PREENCHER]}
+\providecommand{\DurDuasAQuatroHoras}{[PREENCHER]}\providecommand{\DurDuasAQuatroHorasPct}{[PREENCHER]}
+\providecommand{\DurMaisDeQuatroHoras}{[PREENCHER]}\providecommand{\DurMaisDeQuatroHorasPct}{[PREENCHER]}
+
+% Distribuição de sessões por usuário (conforme lista solicitada)
+\providecommand{\SessUmACinco}{[PREENCHER]}\providecommand{\SessUmACincoPct}{[PREENCHER]}
+\providecommand{\SessSeisADez}{[PREENCHER]}\providecommand{\SessSeisADezPct}{[PREENCHER]}
+\providecommand{\SessOnzeAQuinze}{[PREENCHER]}\providecommand{\SessOnzeAQuinzePct}{[PREENCHER]}
+\providecommand{\SessVinteEUmAVinteECinco}{[PREENCHER]}\providecommand{\SessVinteEUmAVinteECincoPct}{[PREENCHER]}
+\providecommand{\SessVinteESeisATrinta}{[PREENCHER]}\providecommand{\SessVinteESeisATrintaPct}{[PREENCHER]}
+\providecommand{\SessMaisDeTrinta}{[PREENCHER]}\providecommand{\SessMaisDeTrintaPct}{[PREENCHER]}
+
+% Top 5 usuários mais engajados
+\providecommand{\TopAFone}{[PREENCHER]}\providecommand{\TopASessoes}{[PREENCHER]}
+\providecommand{\TopBFone}{[PREENCHER]}\providecommand{\TopBSessoes}{[PREENCHER]}
+\providecommand{\TopCFone}{[PREENCHER]}\providecommand{\TopCSessoes}{[PREENCHER]}
+\providecommand{\TopDFone}{[PREENCHER]}\providecommand{\TopDSessoes}{[PREENCHER]}
+\providecommand{\TopEFone}{[PREENCHER]}\providecommand{\TopESessoes}{[PREENCHER]}
+
+% Input externo (se existir)
+\IfFileExists{valores.tex}{\input{valores.tex}}{} 
+
+\begin{document}
+
+%--------------------------------------------------------------
+% Capa
+%--------------------------------------------------------------
+
+\begin{center}
+\textbf{Fundação Escola de Comércio Álvares Penteado (FECAP)}\\
+\textbf{Curso de Ciência da Computação - 4º Semestre}\\[2cm]
+
+\vspace*{\fill}
+\textbf{\Large Relatório de Índices de Engajamento PicMoney}\\[0.5cm]
+\textbf{Entrega 2 – Contabilidade e Finanças}\\[2cm]
+\end{center}
+
+\noindent\hspace*{6cm}\textbf{Caroliny Rossi Bittencourt – 24025959}\\
+\hspace*{6cm}\textbf{Rafael Alves dos Santos Guimarães – 24025724}\\
+\hspace*{6cm}\textbf{Duda Lucena Miguel – 24025889}\\
+\hspace*{6cm}\textbf{Isadora Teixeira Santoma – 24026458}\\[2cm]
+
+\vspace*{\fill}
+\begin{center}
+\vfill
+\textbf{São Paulo – 2025}
+\end{center}
+\newpage
+\onehalfspacing
+
+%--------------------------------------------------------------
+% Introdução
+%--------------------------------------------------------------
+\section*{Introdução}
+
+Este relatório apresenta uma análise detalhada dos principais índices de engajamento e comportamento dos usuários do aplicativo PicMoney durante o mês de julho de 2025.
+Os indicadores foram obtidos a partir do processamento e tratamento das bases de transações do sistema, abrangendo métricas como usuários ativos diários (DAU), usuários ativos semanais (WAU), usuários ativos mensais (MAU), taxa de retenção, taxa de parada (churn), tempo médio de utilização e distribuição de sessões por usuário.
+
+Todos os cálculos e consolidações foram realizados em Python, utilizando bibliotecas de análise de dados como pandas e NumPy, no ambiente Jupyter Notebook.
+O arquivo responsável por esses cálculos encontra-se neste mesmo diretório, sob o nome main.ipynb, garantindo total rastreabilidade e reprodutibilidade das métricas apresentadas neste documento.
+%--------------------------------------------------------------
+% 1. Visão Geral do Desempenho
+%--------------------------------------------------------------
+\section*{1. Visão Geral do Desempenho}
+Período analisado: \textbf{\Periodo}.
+
+\begin{center}
+\begin{tabular}{>{\bfseries}p{0.37\linewidth} p{0.53\linewidth}}
+\toprule
+Transações no período & \TransacoesPeriodo \\
+Usuários únicos (MAU) & \UsuariosUnicos \\
+Dias analisados & \DiasAnalisados \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%--------------------------------------------------------------
+% 2. DAU
+%--------------------------------------------------------------
+\section*{2. Usuários Ativos Diários (DAU)}
+\subsection*{Definição}
+Os Usuarios Ativos Diários (DAU - Daily Active Users) representam a quantidade de usuarios unicos que realizaram ao menos uma transação no aplicativo durante um dia especifico. É uma métrica fundamental para medir o engajamento diário de base de usuários.
+
+\subsection*{Fórmula/Código}
+\noindent \texttt{DAU} $=$ \texttt{COUNT(DISTINCT usuário)}
+
+\subsection*{Cálculo}
+\begin{center}
+\begin{tabular}{>{\bfseries}p{0.37\linewidth} p{0.53\linewidth}}
+\toprule
+DAU (média diária) & \DAUmedio \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%--------------------------------------------------------------
+% 3. WAU
+%--------------------------------------------------------------
+\section*{3. Usuários Ativos Semanais (WAU)}
+\subsection*{Definição}
+Os Usuarios Ativos Semanais (WAU - Weekle Active Users) representam a quantidade de usuarios unicos que realizaram ao menos uma transação no aplicativo durante uma semana (período de 7 dias). Está métrica ajuda a entender o engajamento semana e identificar padrões de uso.
+
+\subsection*{Fórmula/Código}
+\noindent \texttt{WAU} $=$ \texttt{COUNT(DISTINCT usuário) na janela de 7 dias}. 
+
+\subsection*{Cálculo}
+\begin{center}
+\begin{tabular}{>{\bfseries}p{0.37\linewidth} p{0.53\linewidth}}
+\toprule
+WAU (média semanal) & \WAUMedio \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%--------------------------------------------------------------
+% 4. MAU
+%--------------------------------------------------------------
+\section*{4. Usuários Ativos Mensais (MAU)}
+\subsection*{Definição}
+Os Usuários Ativos Mensais (MAU - Monthly Active Users) representam o total de usuários unicos que realizaram ao menos uma transação no aplicativo durante todo o mês. É a métrica mais abrangente para medir o tamanho da base ativa de usuários.
+
+\subsection*{Fórmula}
+\noindent \texttt{MAU} $=$ \texttt{COUNT(DISTINCT usuário) no mês}.
+
+\subsection*{Cálculo}
+\begin{center}
+\begin{tabular}{>{\bfseries}p{0.37\linewidth} p{0.53\linewidth}}
+\toprule
+MAU (mês do relatório) & \MAU \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%--------------------------------------------------------------
+% 5. Retenção
+%--------------------------------------------------------------
+\section*{5. Taxa de Retenção de Usuários}
+\subsection*{Definição}
+A Taxa de Retenção mede o percentual de usuários que retornam ao aplicativo após um período especifico. Para está análise, consideramos a retenção em 30 dias, comparando usuários ativos no início do mês com aqueles que retornaram ao final do período.
+
+\subsection*{Fórmula/Código}
+\noindent \texttt{Retenção(30d)} $=$ \texttt{(Usuarios que retornaram em 30d / Usuários base) $\times$ 100}.
+
+\subsection*{Cálculo}
+\begin{center}
+\begin{tabular}{>{\bfseries}p{0.45\linewidth} p{0.45\linewidth}}
+\toprule
+Usuários base (coorte) & \RetencaoBase \\
+Voltaram em 30 dias & \RetencaoRetornaram \\
+Taxa de retenção (30d) & \RetencaoTaxa \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%--------------------------------------------------------------
+% 6. Churn
+%--------------------------------------------------------------
+\section*{6. Taxa de Parada de Utilização (Churn)}
+\subsection*{Definição}
+A Taxa de Churn (ou Taxa de Parada de Utilização) mede o percentual de usuários que param de usar o aplicarivo. Para este cálculo, consideramos como 'churned' os usuarios que ficaram inativos por 14 dias ou mais, até o final do período analisado
+
+\subsection*{Fórmula/Código}
+\noindent \texttt{Churn} $=$ \texttt{(Usuários inativos / Total de usuários) $\times$ 100}.
+
+\subsection*{Cálculo}
+\begin{center}
+\begin{tabular}{>{\bfseries}p{0.45\linewidth} p{0.45\linewidth}}
+\toprule
+Usuários inativos (critério) & \ChurnInativos \\
+Total de usuários & \ChurnTotalUsuarios \\
+Taxa de churn & \ChurnTaxa \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection*{Distribuição por dias de inatividade}
+\begin{itemize}
+  \item \textbf{0--7 dias:} \InatA\ usuários (\InatAperc)
+  \item \textbf{8--14 dias:} \InatB\ usuários (\InatBperc)
+  \item \textbf{15--21 dias:} \InatC\ usuários (\InatCperc)
+  \item \textbf{22--31 dias:} \InatD\ usuários (\InatDperc)
+\end{itemize}
+
+%--------------------------------------------------------------
+% 7. Tempo Médio
+%--------------------------------------------------------------
+\section*{7. Tempo Médio na Aplicação}
+\subsection*{Definição}
+O tempo Médio na Aplicação mede a duração média de cada sessão de uso. Uma sessão é definida como uma sequência de transações do mesmo usuário com intervalos de no máximo 4 horas entre elas intervalos superiores a 4 horas indicam o início de uma nova sessão.
+
+\subsection*{Fórmula/Código}
+\noindent \texttt{Tempo médio} $=$ \texttt{$\sum$ duração das sessões / total de sessões}.
+
+\subsection*{Cálculo}
+\begin{center}
+\begin{tabular}{>{\bfseries}p{0.45\linewidth} p{0.45\linewidth}}
+\toprule
+Tempo médio por sessão & \TempoMedioMin \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection*{Distribuição de Duração das Sessões}
+\begin{itemize}
+  \item \textbf{0--15 min:} \DurZeroAQuinze\ sessões (\DurZeroAQuinzePct)
+  \item \textbf{15--30 min:} \DurQuinzeATrinta\ sessões (\DurQuinzeATrintaPct)
+  \item \textbf{30--60 min:} \DurTrintaASessenta\ sessões (\DurTrintaASessentaPct)
+  \item \textbf{1--2 horas:} \DurUmaADuasHoras\ sessões (\DurUmaADuasHorasPct)
+  \item \textbf{2--4 horas:} \DurDuasAQuatroHoras\ sessões (\DurDuasAQuatroHorasPct)
+  \item \textbf{+4 horas:} \DurMaisDeQuatroHoras\ sessões (\DurMaisDeQuatroHorasPct)
+\end{itemize}
+
+%--------------------------------------------------------------
+% 8. Sessões por Usuário
+%--------------------------------------------------------------
+\section*{8. Sessões por Usuário}
+\subsection*{Definição}
+Sessão por Usuário mede quantas vezes, em média, cada usuário abre e utiliza o aplicativo durante o período analisado. Esta métrica é fundamental para avaliar a frequência de uso e o grau de engajamento dos usuários com o produto.
+
+\subsection*{Fórmula/Código}
+\noindent \texttt{Sessões/Usuário} $=$ \texttt{Total de sessões / Total de usuários}.
+
+\subsection*{Cálculo}
+\begin{center}
+\begin{tabular}{>{\bfseries}p{0.45\linewidth} p{0.45\linewidth}}
+\toprule
+Total de sessões & \TotalSessoes \\
+Total de usuários & \TotalUsuarios \\
+Média de sessões por usuário & \SessoesPorUsuario \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection*{Distribuição de Sessões por Usuário}
+\begin{itemize}
+  \item \textbf{1--5 sessões:} \SessUmACinco\ usuários (\SessUmACincoPct)
+  \item \textbf{6--10 sessões:} \SessSeisADez\ usuários (\SessSeisADezPct)
+  \item \textbf{11--15 sessões:} \SessOnzeAQuinze\ usuários (\SessOnzeAQuinzePct)
+  \item \textbf{21--25 sessões:} \SessVinteEUmAVinteECinco\ usuários (\SessVinteEUmAVinteECincoPct)
+  \item \textbf{26--30 sessões:} \SessVinteESeisATrinta\ usuários (\SessVinteESeisATrintaPct)
+  \item \textbf{+30 sessões:} \SessMaisDeTrinta\ usuários (\SessMaisDeTrintaPct)
+\end{itemize}
+
+\subsection*{Usuários Mais Engajados}
+\begin{itemize}
+  \item \TopAFone: \TopASessoes\ sessões
+  \item \TopBFone: \TopBSessoes\ sessões
+  \item \TopCFone: \TopCSessoes\ sessões
+  \item \TopDFone: \TopDSessoes\ sessões
+  \item \TopEFone: \TopESessoes\ sessões
+\end{itemize}
+
+%--------------------------------------------------------------
+% 9. Resumo Executivo
+%--------------------------------------------------------------
+\section*{9. Resumo Executivo dos Índices}
+\begin{center}
+\begin{tabular}{>{\bfseries}p{0.35\linewidth} p{0.5\linewidth}}
+\toprule
+DAU (média diária) & \DAUmedio \\
+WAU (média semanal) & \WAUMedio \\
+MAU (mês) & \MAU \\
+Retenção (30d) & \RetencaoTaxa \\
+Churn (inatividade) & \ChurnTaxa \\
+Tempo médio por sessão & \TempoMedioHM \\
+Sessões por usuário (média) & \SessoesPorUsuario \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%--------------------------------------------------------------
+% Conclusão
+%--------------------------------------------------------------
+\section*{Conclusão}
+A análise realizada demonstra as métricas calculadas indicam um nível saudável de atividade e retenção, refletindo que a maioria dos usuários mantém interações regulares com o sistema.
+
+A baixa taxa de churn (\ChurnTaxa) e a média de \SessoesPorUsuario sessões por usuário evidenciam uma aderência sólida ao produto, com comportamento estável ao longo do período analisado. Esses resultados reforçam a qualidade dos dados e sua relevância estratégica para subsidiar decisões de negócio voltadas à fidelização e expansão da base de usuários.
+\end{document}
