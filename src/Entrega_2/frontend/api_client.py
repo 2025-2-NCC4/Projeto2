@@ -13,6 +13,7 @@ def build_url(path, params=None):
         return f"{API_BASE}{path}?{query}"
     return f"{API_BASE}{path}"
 
+
 def get_json_df(path, params=None, timeout=60):
     url = build_url(path, params)
     r = requests.get(url, timeout=timeout)
@@ -24,3 +25,37 @@ def get_json_df(path, params=None, timeout=60):
         return pd.DataFrame([data])
     else:
         return pd.DataFrame()
+    
+def get_all_json_df(
+    path,
+    base_params=None,
+    limit=1000,
+    offset_param="offset",
+    limit_param="limit",
+    timeout=60,
+    max_pages=None,
+):
+    
+    base_params = dict(base_params or {})
+    dfs = []
+    page = 0
+    total_rows = 0
+
+    while True:
+        if max_pages is not None and page >= max_pages:
+            break
+
+        params = {**base_params, limit_param: limit, offset_param: page * limit}
+        df_page = get_json_df(path, params=params, timeout=timeout)
+
+        if df_page.empty:
+            break
+
+        dfs.append(df_page)
+        total_rows += len(df_page)
+        if len(df_page) < limit:
+            break
+
+        page += 1
+
+    return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
