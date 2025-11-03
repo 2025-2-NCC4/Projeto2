@@ -79,7 +79,7 @@ with aba1:
 
 with aba2:
 
-    aba2_1, aba2_2 = st.tabs(["Frequência", "Lojas"])
+    aba2_1, aba2_2 = st.tabs(["Frequência de Captura de cupons", "Lojas"])
     with aba2_1:
         
         df_lojas["data_captura"] = pd.to_datetime(df_lojas["data_captura"], errors="coerce")

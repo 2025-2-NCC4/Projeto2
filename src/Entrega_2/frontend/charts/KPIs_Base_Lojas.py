@@ -12,13 +12,14 @@ def usuarios_loja(df):
 
     fig = px.bar(
         data_frame=s,
-        x="nome_loja",
-        y="usuarios_unicos",
-        title="Lojas por Número de Usuários Únicos",
+        y="nome_loja",
+        x="usuarios_unicos",
+        orientation="h",
+        title="Lojas por Número de Capturas",
         text_auto=True,
         color="usuarios_unicos",
         color_continuous_scale="Blues",
-        labels={"nome_loja": "Loja", "usuarios_unicos": "Usuários Únicos"}
+        labels={"nome_loja": "Lojas", "usuarios_unicos": "Capturas"}
     )
 
     fig.update_layout(xaxis_tickangle=-45, height=500)
@@ -65,7 +66,7 @@ def frequencia_diaria(df, mes, ano):
         color="usuarios_unicos",
         color_continuous_scale="Blues",
         title=f"Frequência Diária – {meses_pt[mes_num]} {ano}",
-        labels={"dia": "Dia", "usuarios_unicos": "Usuários Únicos"},
+        labels={"dia": "Dias", "usuarios_unicos": "Capturas"},
     )
 
     fig.update_layout(height=500, xaxis=dict(tickmode="linear", tick0=1, dtick=1))
@@ -96,13 +97,13 @@ def frequencia_semanal(df, ano):
         color="usuarios_unicos",
         color_continuous_scale="Blues",
         title=f"Frequência Semanal de Usuários Únicos – {ano}",
-        labels={"semana_label": "Semana", "usuarios_unicos": "Usuários Únicos"},
+        labels={"semana_label": "Semanas", "usuarios_unicos": "Capturas"},
     )
 
     fig.update_layout(
         height=480,
         xaxis=dict(showgrid=False, tickangle=-45),
-        yaxis_title="Usuários Únicos",
+        yaxis_title="Capturas",
     )
     return fig
 
@@ -143,7 +144,7 @@ def frequencia_mensal(df, ano):
         color="usuarios_unicos",
         color_continuous_scale="Blues",
         title=f"Frequência Mensal de Usuários Únicos – {ano}",
-        labels={"mes_label": "Mês", "usuarios_unicos": "Usuários Únicos"},
+        labels={"mes_label": "Meses", "usuarios_unicos": "Capturas"},
     )
 
     fig.update_layout(height=480, xaxis=dict(showgrid=False, tickangle=-45))
@@ -173,14 +174,14 @@ def frequencia_ano(df):
         text_auto=True,
         color="usuarios_unicos",
         color_continuous_scale="Blues",
-        title="Frequência Anual de Usuários Únicos",
-        labels={"ano": "Ano", "usuarios_unicos": "Usuários Únicos"},
+        title="Frequência Anual de Capturas",
+        labels={"ano": "Anos", "usuarios_unicos": "Capturas"},
     )
 
     fig.update_layout(
         height=480,
         xaxis=dict(showgrid=False),
-        yaxis_title="Usuários Únicos"
+        yaxis_title="Capturas"
     )
 
     return fig
