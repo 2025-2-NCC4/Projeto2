@@ -2,28 +2,7 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 
-def usuarios_loja(df):
-    s = (
-        df.groupby("nome_loja")["numero_celular"]
-          .nunique()
-          .sort_values(ascending=False)
-          .reset_index(name="usuarios_unicos")
-    )
 
-    fig = px.bar(
-        data_frame=s,
-        y="nome_loja",
-        x="usuarios_unicos",
-        orientation="h",
-        title="Lojas por Número de Capturas",
-        text_auto=True,
-        color="usuarios_unicos",
-        color_continuous_scale="Blues",
-        labels={"nome_loja": "Lojas", "usuarios_unicos": "Capturas"}
-    )
-
-    fig.update_layout(xaxis_tickangle=-45, height=500)
-    return fig
 
 def frequencia_diaria(df, mes, ano):
     df = df.copy()
@@ -65,7 +44,7 @@ def frequencia_diaria(df, mes, ano):
         text_auto=True,
         color="usuarios_unicos",
         color_continuous_scale="Blues",
-        title=f"Frequência Diária – {meses_pt[mes_num]} {ano}",
+        title=f"Frequência Diária de Captura - {meses_pt[mes_num]} {ano}",
         labels={"dia": "Dias", "usuarios_unicos": "Capturas"},
     )
 
@@ -77,9 +56,6 @@ def frequencia_semanal(df, ano):
     df["data_captura"] = pd.to_datetime(df["data_captura"], errors="coerce")
     df = df.dropna(subset=["data_captura"])
     df = df[df["data_captura"].dt.year == ano]
-
-    if df.empty:
-        return px.bar(title=f"Sem dados disponíveis para {ano}")
 
     df["semana"] = df["data_captura"].dt.isocalendar().week
     semanal = df.groupby("semana")["numero_celular"].nunique().reset_index(name="usuarios_unicos")
@@ -96,7 +72,7 @@ def frequencia_semanal(df, ano):
         text_auto=True,
         color="usuarios_unicos",
         color_continuous_scale="Blues",
-        title=f"Frequência Semanal de Usuários Únicos – {ano}",
+        title=f"Frequência Semanal de Capturas – {ano}",
         labels={"semana_label": "Semanas", "usuarios_unicos": "Capturas"},
     )
 
@@ -143,7 +119,7 @@ def frequencia_mensal(df, ano):
         text_auto=True,
         color="usuarios_unicos",
         color_continuous_scale="Blues",
-        title=f"Frequência Mensal de Usuários Únicos – {ano}",
+        title=f"Frequência Mensal de Captura – {ano}",
         labels={"mes_label": "Meses", "usuarios_unicos": "Capturas"},
     )
 
@@ -258,3 +234,4 @@ def medias_frequencia(df, mes, ano):
         "media_mensal_ano": media_mensal,
         "media_anual": media_anual
     }
+
