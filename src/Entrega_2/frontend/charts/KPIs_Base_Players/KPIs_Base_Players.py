@@ -106,38 +106,6 @@ def metricas_etarias(df):
     return out
 
 # -----------------------------
-# Principais categorias – DF e Figura (duas funções para evitar conflito de uso)
-# -----------------------------
-def principais_categorias_df(df):
-    dff = df.copy()
-    if "categoria_frequentada" not in dff.columns or "celular" not in dff.columns:
-        return pd.DataFrame(columns=["Categorias", "Players Únicos"])
-    df_out = (
-        dff.groupby("categoria_frequentada")["celular"]
-           .nunique()
-           .reset_index()
-           .rename(columns={"categoria_frequentada": "Categorias", "celular": "Players Únicos"})
-           .sort_values(by="Players Únicos", ascending=False)
-    )
-    return df_out
-
-def fig_principais_categorias(df):
-    df_rank = principais_categorias_df(df)
-    fig = px.bar(
-        df_rank, x="Players Únicos", y="Categorias", orientation="h",
-        title="Ranking de Categorias por Players Únicos",
-        text="Players Únicos",
-    )
-    fig.update_traces(textposition="outside")
-    fig.update_layout(xaxis_title="Quantidade de Players", yaxis_title="Categorias",
-                      uniformtext_minsize=8, uniformtext_mode="hide")
-    return fig
-
-# Mantém o nome antigo para não quebrar quem já chama st.dataframe(df_principais_categorias(...))
-def df_principais_categorias(df):
-    return principais_categorias_df(df)
-
-# -----------------------------
 # Cidades – gráfico (com defaults para compatibilidade)
 # -----------------------------
 def grafico_cidades(df, tipo_cidade="Moradia", top_n=20):
