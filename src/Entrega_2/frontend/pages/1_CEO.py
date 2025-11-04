@@ -1,8 +1,8 @@
 # pages/1_CEO.py
 import streamlit as st
 import pandas as pd
-from components.aba_players import render_aba_players
-from components.aba_lojas import render_aba_lojas
+from components.aba_perfil_players.aba_perfil_players import render_aba_players
+from components.apa_pefil_cupons.aba_perfil_cupons import render_aba_perfil_cupons
 
 # =========================
 # Configuração
@@ -140,16 +140,13 @@ def _aplica_filtros_adicionais(df):
 
 df_filtrado = _aplica_filtros_adicionais(df_filtrado)
 
-# =========================
-# TABS → chama componentes
-# =========================
-aba1, aba2 = st.tabs(["Perfil dos Players", "Perfil das Lojas"])
+aba1, aba2 = st.tabs(["Perfil dos Players", "Perfil Cupons"])
 
 with aba1:
     render_aba_players(df_players)
 
 with aba2:
-    render_aba_lojas(
+    render_aba_perfil_cupons(
         df_filtrado=df_filtrado,
         ano_escolhido=ano_escolhido,
         mes_escolhido=mes_escolhido,
