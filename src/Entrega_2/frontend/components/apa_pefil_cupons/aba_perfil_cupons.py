@@ -1,6 +1,6 @@
 # components/aba_lojas.py
 import streamlit as st
-from charts.KPIs_Base_Lojas.Frequencia_por_Loja_Capturas import (
+from charts.KPIs_Base_Lojas.Perfil_Frequencia_Capturas import (
     frequencia_ano_filtrada,
     frequencia_dia_semana_ano_filtrada,
     frequencia_dia_semana_mes_filtrada,
@@ -9,13 +9,15 @@ from charts.KPIs_Base_Lojas.Frequencia_por_Loja_Capturas import (
     frequencia_diaria_filtrada,
     medias_frequencia_filtrada,
 )
-from charts.KPIs_Base_Lojas.Comparativos_Lojas import (
+from charts.KPIs_Base_Lojas.Perfil_Comparativo_Lojas_Categorias import (
     capturas_categoria,
+    resumo_parceiros,
+    usuarios_loja,
+)
+from charts.KPIs_Base_Lojas.Perfil_Cupons import (
     cupons_por_categoria,
     cupons_por_loja,
-    resumo_parceiros,
     tipo_cupom,
-    usuarios_loja,
 )
 
 def render_aba_perfil_cupons(
@@ -23,9 +25,9 @@ def render_aba_perfil_cupons(
     ano_escolhido: int,
     mes_escolhido: int,
     modo: str,
-    filtro_nome=None,   # lista/None
-    filtro_tipo=None,   # lista/None (categoria_estabelecimento)
-    filtro_categ=None,  # legado/opcional (não usado aqui)
+    filtro_nome=None,   # lista/None -> nomes_lojas
+    filtro_tipo=None,   # lista/None -> categorias (categoria_estabelecimento)
+    filtro_categ=None,  # legado/opcional (não usado)
 ):
     """Renderiza a aba 'Perfil das Lojas' com base nos filtros e período."""
     st.subheader("Perfil de Cupons/Capturas")
@@ -40,8 +42,8 @@ def render_aba_perfil_cupons(
                 df_filtrado,
                 mes_escolhido,
                 ano_escolhido,
-                nome_estabelecimento=filtro_nome or None,
-                categoria_estabelecimento=filtro_tipo or None,
+                nomes_lojas=filtro_nome or None,
+                categorias=filtro_tipo or None,
             )
             st.write("Resumo de Frequência (médias):")
             media_diaria  = float(kpi.get("media_diaria_mes_ano", 0))
@@ -64,8 +66,8 @@ def render_aba_perfil_cupons(
                         df_filtrado,
                         mes_escolhido,
                         ano_escolhido,
-                        nome_estabelecimento=filtro_nome or None,
-                        categoria_estabelecimento=filtro_tipo or None,
+                        nomes_lojas=filtro_nome or None,
+                        categorias=filtro_tipo or None,
                         modo=modo,
                     ),
                     use_container_width=True,
@@ -79,8 +81,8 @@ def render_aba_perfil_cupons(
                     frequencia_semanal_filtrada(
                         df_filtrado,
                         ano_escolhido,
-                        nome_estabelecimento=filtro_nome or None,
-                        categoria_estabelecimento=filtro_tipo or None,
+                        nomes_lojas=filtro_nome or None,
+                        categorias=filtro_tipo or None,
                         modo=modo,
                     ),
                     use_container_width=True,
@@ -95,8 +97,8 @@ def render_aba_perfil_cupons(
                     frequencia_mensal_filtrada(
                         df_filtrado,
                         ano_escolhido,
-                        nome_estabelecimento=filtro_nome or None,
-                        categoria_estabelecimento=filtro_tipo or None,
+                        nomes_lojas=filtro_nome or None,
+                        categorias=filtro_tipo or None,
                         modo=modo,
                     ),
                     use_container_width=True,
@@ -109,8 +111,8 @@ def render_aba_perfil_cupons(
                 st.plotly_chart(
                     frequencia_ano_filtrada(
                         df_filtrado,
-                        nome_estabelecimento=filtro_nome or None,
-                        categoria_estabelecimento=filtro_tipo or None,
+                        nomes_lojas=filtro_nome or None,
+                        categorias=filtro_tipo or None,
                         modo=modo,
                     ),
                     use_container_width=True,
@@ -126,8 +128,8 @@ def render_aba_perfil_cupons(
                         df_filtrado,
                         ano_escolhido,
                         mes_escolhido,
-                        nome_estabelecimento=filtro_nome or None,
-                        categoria_estabelecimento=filtro_tipo or None,
+                        nomes_lojas=filtro_nome or None,
+                        categorias=filtro_tipo or None,
                         modo=modo,
                     ),
                     use_container_width=True,
@@ -141,8 +143,8 @@ def render_aba_perfil_cupons(
                     frequencia_dia_semana_ano_filtrada(
                         df_filtrado,
                         ano_escolhido,
-                        nome_estabelecimento=filtro_nome or None,
-                        categoria_estabelecimento=filtro_tipo or None,
+                        nomes_lojas=filtro_nome or None,
+                        categorias=filtro_tipo or None,
                         modo=modo,
                     ),
                     use_container_width=True,
@@ -157,7 +159,13 @@ def render_aba_perfil_cupons(
         st.subheader("Lojas e Categorias (comparativos)")
 
         try:
-            total_lojas, total_categorias = resumo_parceiros(df_filtrado, mes_escolhido, ano_escolhido)
+            total_lojas, total_categorias = resumo_parceiros(
+                df_filtrado,
+                mes_escolhido,
+                ano_escolhido,
+                nomes_lojas=filtro_nome or None,
+                categorias=filtro_tipo or None,
+            )
             st.write("### Resumo de Parceiros")
             r1, r2 = st.columns(2)
             r1.metric("Total de Lojas", f"{total_lojas}")
@@ -174,6 +182,8 @@ def render_aba_perfil_cupons(
                         mes_escolhido,
                         ano_escolhido,
                         modo=modo,
+                        nomes_lojas=filtro_nome or None,
+                        categorias=filtro_tipo or None,
                     ),
                     use_container_width=True,
                 )
@@ -188,6 +198,8 @@ def render_aba_perfil_cupons(
                         mes_escolhido,
                         ano_escolhido,
                         modo=modo,
+                        nomes_lojas=filtro_nome or None,
+                        categorias=filtro_tipo or None,
                     ),
                     use_container_width=True,
                 )
@@ -206,8 +218,8 @@ def render_aba_perfil_cupons(
                     df_filtrado,
                     ano_escolhido,
                     mes=mes_escolhido,
-                    nome_estabelecimento=filtro_nome or None,
-                    categoria_estabelecimento=filtro_tipo or None,
+                    nomes_lojas=filtro_nome or None,
+                    categorias=filtro_tipo or None,
                     modo=modo,
                 ),
                 use_container_width=True,
@@ -221,7 +233,9 @@ def render_aba_perfil_cupons(
                     df_filtrado,
                     mes=mes_escolhido,
                     ano=ano_escolhido,
-                    modo=modo
+                    modo=modo,
+                    nomes_lojas=filtro_nome or None,
+                    categorias=filtro_tipo or None,
                 ),
                 use_container_width=True
             )
@@ -234,7 +248,9 @@ def render_aba_perfil_cupons(
                     df_filtrado,
                     mes=mes_escolhido,
                     ano=ano_escolhido,
-                    modo=modo
+                    modo=modo,
+                    nomes_lojas=filtro_nome or None,
+                    categorias=filtro_tipo or None,
                 ),
                 use_container_width=True
             )
