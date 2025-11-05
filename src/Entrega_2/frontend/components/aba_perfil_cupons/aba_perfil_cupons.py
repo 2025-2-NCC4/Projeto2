@@ -10,9 +10,11 @@ from charts.KPIs_Base_Lojas.Perfil_Frequencia_Capturas import (
     medias_frequencia_filtrada,
 )
 from charts.KPIs_Base_Lojas.Perfil_Comparativo_Lojas_Categorias import (
-    capturas_categoria,
-    resumo_parceiros,
     usuarios_loja,
+    capturas_categoria,
+    estabelecimentos_por_categoria,
+    lista_estabelecimentos_por_categoria,
+    resumo_parceiros,
 )
 from charts.KPIs_Base_Lojas.Perfil_Cupons import (
     cupons_por_categoria,
@@ -205,6 +207,36 @@ def render_aba_perfil_cupons(
                 )
             except Exception as e:
                 st.warning(f"Erro no gráfico 'capturas_categoria': {e}")
+    
+        try:
+            st.plotly_chart(
+                estabelecimentos_por_categoria(                        
+                    df_filtrado,
+                    mes_escolhido,
+                    ano_escolhido,
+                    modo=modo,                       
+                    nomes_lojas=filtro_nome or None,
+                    categorias=filtro_tipo or None,
+                ),
+                use_container_width=True,
+            )
+        except Exception as e:
+            st.warning(f"Erro no gráfico 'estabelecimentos_por_categoria': {e}")
+
+        try:
+            lista_estab = lista_estabelecimentos_por_categoria(
+                df_filtrado,
+                mes=mes_escolhido,
+                ano=ano_escolhido,
+                nomes_lojas=filtro_nome or None,
+                categorias=filtro_tipo or None,
+            )
+            st.write("### Lista de Estabelecimentos por Categoria")
+            for categoria, estabelecimentos in lista_estab.items():
+                with st.expander(f"📂 {categoria} ({len(estabelecimentos)} lojas)"):
+                    st.write(", ".join(estabelecimentos))
+        except Exception as e:
+            st.warning(f"Erro ao gerar lista de estabelecimentos: {e}")
 
     # ---------------------------
     # ABA 3 — Cupons
@@ -256,3 +288,5 @@ def render_aba_perfil_cupons(
             )
         except Exception as e:
             st.warning(f"Erro no gráfico 'cupons_por_categoria': {e}")
+
+        

@@ -1,8 +1,11 @@
 # pages/1_CEO.py
 import streamlit as st
 import pandas as pd
+
+# === IMPORTS DOS COMPONENTES (corrigidos) ===
 from components.aba_perfil_players.aba_perfil_players import render_aba_players
-from components.apa_pefil_cupons.aba_perfil_cupons import render_aba_perfil_cupons
+from components.aba_perfil_transacoes.aba_perfil_transacoes import render_aba_perfil_transacoes
+from components.aba_perfil_cupons.aba_perfil_cupons import render_aba_perfil_cupons
 
 # =========================
 # Configuração
@@ -18,24 +21,24 @@ df_lojas      = pd.read_csv(r"base_de_dados\base_lojas.csv", sep=",")
 df_transacoes = pd.read_csv(r"base_de_dados\base_transacoes.csv", sep=",")
 df_simulacao  = pd.read_csv(r"base_de_dados\base_simulacao.csv", sep=",")
 
-# Garantir datetime
-if "data" in df_lojas.columns:
-    df_lojas["data"] = pd.to_datetime(df_lojas["data"], errors="coerce")
-    df_lojas = df_lojas.dropna(subset=["data"])
-else:
-    st.error("A base de lojas não possui a coluna 'data'.")
-    st.stop()
+# Garantir datetime nas bases que dependem de 'data'
+for _df in (df_lojas, df_transacoes):
+    if "data" in _df.columns:
+        _df["data"] = pd.to_datetime(_df["data"], errors="coerce")
+        _df.dropna(subset=["data"], inplace=True)
+    else:
+        st.error("Uma das bases não possui a coluna 'data'.")
+        st.stop()
 
 # =========================
-# Filtros (período e lojas) — iguais ao original
+# Filtros de período (sidebar)
 # =========================
 st.sidebar.markdown("### Filtros de período")
 
+# Use df_lojas como base para a UI de período (você pode trocar por df_transacoes se preferir)
 df_base = df_lojas.copy()
-df_base["data"] = pd.to_datetime(df_base["data"], errors="coerce")
-df_base = df_base.dropna(subset=["data"])
 if df_base.empty:
-    st.sidebar.error("Sem dados válidos em 'data'.")
+    st.sidebar.error("Sem dados válidos em 'data' na base de lojas.")
     st.stop()
 
 min_dt = df_base["data"].min().normalize()
@@ -47,7 +50,7 @@ meses_pt = {1:"Janeiro",2:"Fevereiro",3:"Março",4:"Abril",5:"Maio",6:"Junho",
             7:"Julho",8:"Agosto",9:"Setembro",10:"Outubro",11:"Novembro",12:"Dezembro"}
 mes_pt_to_int = {v:k for k, v in meses_pt.items()}
 
-# Ano
+# Ano (intervalo)
 if len(anos_disponiveis) == 1:
     ano_unico = int(anos_disponiveis[0])
     st.sidebar.markdown(f"**Ano (fixo – dados de teste):** {ano_unico}")
@@ -68,17 +71,17 @@ meses_no_range = (
     ["data"].dt.month.unique()
 )
 meses_no_range = sorted([int(m) for m in meses_no_range])
-opcoes_meses_pt = [meses_pt[m] for m in (meses_no_range or list(range(1, 13)))]
+opcoes_meses_pt = [meses_pt[m] for m in (meses_no_range or list(range(1, 12+1)))]
 
-if len(set(meses_no_range)) <= 1:
-    mes_unico_num = meses_no_range[0] if meses_no_range else min(meses_disponiveis or [7])
+if len(set(meses_no_range)) <= 1 and meses_no_range:
+    mes_unico_num = meses_no_range[0]
     st.sidebar.markdown(f"**Mês (fixo – dados de teste):** {meses_pt[mes_unico_num]}")
     meses_sel = (mes_unico_num, mes_unico_num)
 else:
     meses_sel_pt = st.sidebar.select_slider(
         "Mês (intervalo)",
         options=opcoes_meses_pt,
-        value=(opcoes_meses_pt[0], opcoes_meses_pt[-1]),
+        value=(opcoes_meses_pt[0], opcoes_meses_pt[-1]) if opcoes_meses_pt else ("Janeiro", "Dezembro"),
         key="mes_intervalo",
     )
     meses_sel = (mes_pt_to_int[meses_sel_pt[0]], mes_pt_to_int[meses_sel_pt[1]])
@@ -100,15 +103,49 @@ else:
 if pd.to_datetime(d_ini) > pd.to_datetime(d_fim):
     d_ini, d_fim = d_fim, d_ini
 
-# Modo
+# Modo de exibição
 modo = st.sidebar.selectbox("Exibir como:", ["Valores", "Percentual", "Ambos"], index=0).lower()
 
-# Máscara final + escolha de ano/mês para funções
-mask = df_base["data"].dt.year.between(anos_sel[0], anos_sel[1])
-mask &= df_base["data"].dt.month.between(meses_sel[0], meses_sel[1])
-mask &= df_base["data"].between(pd.to_datetime(d_ini), pd.to_datetime(d_fim))
-df_filtrado = df_base.loc[mask].copy()
+# =========================
+# Filtros de Loja/Categoria (sidebar)
+# =========================
+st.sidebar.markdown("---")
+st.sidebar.markdown("### Filtros de Loja/Categoria")
 
+opcoes_lojas = sorted(df_lojas["nome_estabelecimento"].dropna().unique()) if "nome_estabelecimento" in df_lojas.columns else []
+opcoes_categ = sorted(df_lojas["categoria_estabelecimento"].dropna().unique()) if "categoria_estabelecimento" in df_lojas.columns else []
+
+filtro_nome  = st.sidebar.multiselect("Lojas", opcoes_lojas, default=[])
+filtro_categ = st.sidebar.multiselect("Categorias", opcoes_categ, default=[])
+
+def _aplica_filtros_adicionais(df):
+    dff = df.copy()
+    if filtro_nome and "nome_estabelecimento" in dff.columns:
+        dff = dff[dff["nome_estabelecimento"].isin(filtro_nome)]
+    if filtro_categ and "categoria_estabelecimento" in dff.columns:
+        dff = dff[dff["categoria_estabelecimento"].isin(filtro_categ)]
+    return dff
+
+# =========================
+# MÁSCARAS DE PERÍODO E DATA PARA CADA BASE
+# =========================
+# Para LOJAS/CUPONS (usam df_lojas):
+mask_lojas = (
+    df_lojas["data"].dt.year.between(anos_sel[0], anos_sel[1]) &
+    df_lojas["data"].dt.month.between(meses_sel[0], meses_sel[1]) &
+    df_lojas["data"].between(pd.to_datetime(d_ini), pd.to_datetime(d_fim))
+)
+df_lojas_filtrado = _aplica_filtros_adicionais(df_lojas.loc[mask_lojas].copy())
+
+# Para TRANSAÇÕES (retenção usa df_transacoes):
+mask_trans = (
+    df_transacoes["data"].dt.year.between(anos_sel[0], anos_sel[1]) &
+    df_transacoes["data"].dt.month.between(meses_sel[0], meses_sel[1]) &
+    df_transacoes["data"].between(pd.to_datetime(d_ini), pd.to_datetime(d_fim))
+)
+df_trans_filtrado = _aplica_filtros_adicionais(df_transacoes.loc[mask_trans].copy())
+
+# Ano/Mês escolhidos para funções (use o fim do range)
 ano_escolhido = int(anos_sel[1])
 mes_escolhido = int(meses_sel[1])
 
@@ -118,39 +155,33 @@ if len(anos_disponiveis) == 1 or len(set(meses_no_range)) <= 1:
         "No deploy oficial, os controles serão intervalares."
     )
 
-# Filtros de Loja/Categoria
-st.sidebar.markdown("---")
-st.sidebar.markdown("### Filtros de Loja/Categoria")
-opcoes_lojas = sorted(df_base["nome_estabelecimento"].dropna().unique()) if "nome_estabelecimento" in df_base.columns else []
-opcoes_categ = sorted(df_base["categoria_estabelecimento"].dropna().unique()) if "categoria_estabelecimento" in df_base.columns else []
-
-
-filtro_nome = st.sidebar.multiselect("Lojas", opcoes_lojas, default=[])
-filtro_categ = st.sidebar.multiselect("Categorias", opcoes_categ, default=[])
-
-def _aplica_filtros_adicionais(df):
-    dff = df.copy()
-    if filtro_nome and "nome_estabelecimento" in dff.columns:
-        dff = dff[dff["nome_estabelecimento"].isin(filtro_nome)]
-    if filtro_categ and "categoria_estabelecimento" in dff.columns:
-        dff = dff[dff["categoria_estabelecimento"].isin(filtro_categ)]
-    if filtro_categ and "categoria_estabelecimento" in dff.columns:
-        dff = dff[dff["categoria_estabelecimento"].isin(filtro_categ)]
-    return dff
-
-df_filtrado = _aplica_filtros_adicionais(df_filtrado)
-
-aba1, aba2 = st.tabs(["Perfil dos Players", "Perfil Cupons"])
+# =========================
+# ABAS
+# =========================
+aba1, aba2, aba3 = st.tabs(["Perfil dos Players", "Perfil Cupons", "Taxa de Retenção"])
 
 with aba1:
     render_aba_players(df_players)
 
 with aba2:
+    # Usa a BASE DE LOJAS (gráficos de frequência, comparativos, cupons etc.)
     render_aba_perfil_cupons(
-        df_filtrado=df_filtrado,
+        df_filtrado=df_lojas_filtrado,
+        ano_escolhido=ano_escolhido,
+        mes_escolhido=mes_escolhido,
+        modo=modo,
+        # componentes já usam 'nomes_lojas'/'categorias' internamente;
+        # aqui passamos os valores do sidebar:
+        filtro_nome=filtro_nome or None,
+        filtro_tipo=filtro_categ or None,   # <— importante: passe como filtro_tipo para manter compatibilidade
+    )
+
+with aba3:
+    render_aba_perfil_transacoes(
+        df_filtrado=df_trans_filtrado,
         ano_escolhido=ano_escolhido,
         mes_escolhido=mes_escolhido,
         modo=modo,
         filtro_nome=filtro_nome or None,
-        filtro_categ=filtro_categ or None,
+        filtro_tipo=filtro_categ or None,
     )
