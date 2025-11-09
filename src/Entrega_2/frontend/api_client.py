@@ -29,7 +29,7 @@ def get_json_df(path, params=None, timeout=60):
 def get_all_json_df(
     path,
     base_params=None,
-    limit=1000,
+    limit=10000,
     offset_param="offset",
     limit_param="limit",
     timeout=60,

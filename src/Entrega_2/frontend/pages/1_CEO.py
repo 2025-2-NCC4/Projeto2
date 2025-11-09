@@ -7,6 +7,8 @@ from components.aba_perfil_players.aba_perfil_players import render_aba_players
 from components.aba_perfil_transacoes.aba_perfil_transacoes import render_aba_perfil_transacoes
 from components.aba_perfil_cupons.aba_perfil_cupons import render_aba_perfil_cupons
 
+from api_client import get_all_json_df
+
 # =========================
 # Configuração
 # =========================
@@ -16,10 +18,48 @@ st.title("Dashboard – CEO")
 # =========================
 # Carga de bases (exemplo local; ajuste para API quando for integrar)
 # =========================
-df_players    = pd.read_csv(r"base_de_dados\base_players.csv", sep=",")
-df_lojas      = pd.read_csv(r"base_de_dados\base_lojas.csv", sep=",")
-df_transacoes = pd.read_csv(r"base_de_dados\base_transacoes.csv", sep=",")
-df_simulacao  = pd.read_csv(r"base_de_dados\base_simulacao.csv", sep=",")
+# Opcional: ajuste TTL do cache (em segundos)
+CACHE_TTL = 3600  # 1 hora
+
+# ---------- Loaders cacheados (um por base) ----------
+@st.cache_data(show_spinner=False, ttl=CACHE_TTL)
+def load_players():
+    # Busca todas as linhas de /players com paginação interna
+    return get_all_json_df("/players", max_pages=None)
+
+@st.cache_data(show_spinner=False, ttl=CACHE_TTL)
+def load_lojas():
+    return get_all_json_df("/lojas", max_pages=None)
+
+@st.cache_data(show_spinner=False, ttl=CACHE_TTL)
+def load_transacoes():
+    return get_all_json_df("/transacoes", max_pages=None)
+
+@st.cache_data(show_spinner=False, ttl=CACHE_TTL)
+def load_simulacao():
+    return get_all_json_df("/simulacao", max_pages=None)
+
+# ---------- (Opcional) utilitário seguro ----------
+def _safe(call, nome: str) -> pd.DataFrame:
+    try:
+        df = call()
+        # garante DataFrame mesmo se API voltar lista vazia
+        return df if isinstance(df, pd.DataFrame) else pd.DataFrame()
+    except Exception as e:
+        st.error(f"Erro ao carregar {nome}: {e}")
+        return pd.DataFrame()
+
+# ---------- Variáveis finais (como você pediu) ----------
+df_players    = _safe(load_players,    "players")
+df_lojas      = _safe(load_lojas,      "lojas")
+df_transacoes = _safe(load_transacoes, "transações")
+df_simulacao  = _safe(load_simulacao,  "simulação")
+
+# ---------- (Opcional) botão para forçar atualização ----------
+# Coloque o botão onde preferir na página
+if st.button("↻ Atualizar dados"):
+    st.cache_data.clear()
+    st.rerun()
 
 # Garantir datetime nas bases que dependem de 'data'
 for _df in (df_lojas, df_transacoes):
