@@ -1,13 +1,21 @@
-# pages/1_CEO.py
 import streamlit as st
 import pandas as pd
+from datetime import datetime
 
-# === IMPORTS DOS COMPONENTES (corrigidos) ===
+
+import plotly.graph_objects as go
+import matplotlib.figure as mpl_fig
+
+# === IMPORTS DOS COMPONENTES ===
 from components.aba_perfil_players.aba_perfil_players import render_aba_players
 from components.aba_perfil_transacoes.aba_perfil_transacoes import render_aba_perfil_transacoes
 from components.aba_perfil_cupons.aba_perfil_cupons import render_aba_perfil_cupons
 
+from utils.report_export import construir_pdf_relatorio  # PDF
+from utils.auto_download import trigger_download          # download automático
 from api_client import get_all_json_df
+
+import utils.thema_plotly
 
 # =========================
 # Configuração
@@ -15,16 +23,20 @@ from api_client import get_all_json_df
 st.set_page_config(page_title="Dashboard – CEO", layout="wide")
 st.title("Dashboard – CEO")
 
+hide_menu_style = """
+    <style>
+    div[data-testid="stSidebarNav"] li:first-child {display: none;}
+    </style>
+"""
+st.markdown(hide_menu_style, unsafe_allow_html=True)
+
 # =========================
 # Carga de bases (exemplo local; ajuste para API quando for integrar)
 # =========================
-# Opcional: ajuste TTL do cache (em segundos)
 CACHE_TTL = 3600  # 1 hora
 
-# ---------- Loaders cacheados (um por base) ----------
 @st.cache_data(show_spinner=False, ttl=CACHE_TTL)
 def load_players():
-    # Busca todas as linhas de /players com paginação interna
     return get_all_json_df("/players", max_pages=None)
 
 @st.cache_data(show_spinner=False, ttl=CACHE_TTL)
@@ -39,24 +51,21 @@ def load_transacoes():
 def load_simulacao():
     return get_all_json_df("/simulacao", max_pages=None)
 
-# ---------- (Opcional) utilitário seguro ----------
 def _safe(call, nome: str) -> pd.DataFrame:
     try:
         df = call()
-        # garante DataFrame mesmo se API voltar lista vazia
         return df if isinstance(df, pd.DataFrame) else pd.DataFrame()
     except Exception as e:
         st.error(f"Erro ao carregar {nome}: {e}")
         return pd.DataFrame()
 
-# ---------- Variáveis finais (como você pediu) ----------
+# ---------- Variáveis finais ----------
 df_players    = _safe(load_players,    "players")
 df_lojas      = _safe(load_lojas,      "lojas")
 df_transacoes = _safe(load_transacoes, "transações")
 df_simulacao  = _safe(load_simulacao,  "simulação")
 
-# ---------- (Opcional) botão para forçar atualização ----------
-# Coloque o botão onde preferir na página
+# ---------- Forçar atualização ----------
 if st.button("↻ Atualizar dados"):
     st.cache_data.clear()
     st.rerun()
@@ -74,8 +83,6 @@ for _df in (df_lojas, df_transacoes):
 # Filtros de período (sidebar)
 # =========================
 st.sidebar.markdown("### Filtros de período")
-
-# Use df_lojas como base para a UI de período (você pode trocar por df_transacoes se preferir)
 df_base = df_lojas.copy()
 if df_base.empty:
     st.sidebar.error("Sem dados válidos em 'data' na base de lojas.")
@@ -85,7 +92,6 @@ min_dt = df_base["data"].min().normalize()
 max_dt = df_base["data"].max().normalize()
 
 anos_disponiveis = sorted(df_base["data"].dt.year.unique().astype(int))
-meses_disponiveis = sorted(df_base["data"].dt.month.unique().astype(int))
 meses_pt = {1:"Janeiro",2:"Fevereiro",3:"Março",4:"Abril",5:"Maio",6:"Junho",
             7:"Julho",8:"Agosto",9:"Setembro",10:"Outubro",11:"Novembro",12:"Dezembro"}
 mes_pt_to_int = {v:k for k, v in meses_pt.items()}
@@ -105,14 +111,15 @@ else:
         key="ano_intervalo",
     )
 
-# Mês dentro do range de anos
+# Meses dentro do range de anos
 meses_no_range = (
     df_base[df_base["data"].dt.year.between(anos_sel[0], anos_sel[1])]
     ["data"].dt.month.unique()
 )
-meses_no_range = sorted([int(m) for m in meses_no_range])
-opcoes_meses_pt = [meses_pt[m] for m in (meses_no_range or list(range(1, 12+1)))]
+meses_no_range = sorted([int(m) for m in (meses_no_range if len(meses_no_range) else range(1, 13))])
+opcoes_meses_pt = [meses_pt[m] for m in meses_no_range]
 
+# Mês (intervalo)
 if len(set(meses_no_range)) <= 1 and meses_no_range:
     mes_unico_num = meses_no_range[0]
     st.sidebar.markdown(f"**Mês (fixo – dados de teste):** {meses_pt[mes_unico_num]}")
@@ -121,12 +128,12 @@ else:
     meses_sel_pt = st.sidebar.select_slider(
         "Mês (intervalo)",
         options=opcoes_meses_pt,
-        value=(opcoes_meses_pt[0], opcoes_meses_pt[-1]) if opcoes_meses_pt else ("Janeiro", "Dezembro"),
+        value=(opcoes_meses_pt[0], opcoes_meses_pt[-1]),
         key="mes_intervalo",
     )
     meses_sel = (mes_pt_to_int[meses_sel_pt[0]], mes_pt_to_int[meses_sel_pt[1]])
 
-# Dia (intervalo de datas)
+# Dia (intervalo)
 datas_sel = st.sidebar.date_input(
     "Dia (intervalo)",
     value=(min_dt.date(), max_dt.date()),
@@ -144,7 +151,12 @@ if pd.to_datetime(d_ini) > pd.to_datetime(d_fim):
     d_ini, d_fim = d_fim, d_ini
 
 # Modo de exibição
-modo = st.sidebar.selectbox("Exibir como:", ["Valores", "Percentual", "Ambos"], index=0).lower()
+modo = st.sidebar.radio(
+    "Exibir como:",
+    ["Percentual", "Valores", "Ambos"],
+    index=0
+).lower()
+
 
 # =========================
 # Filtros de Loja/Categoria (sidebar)
@@ -167,9 +179,8 @@ def _aplica_filtros_adicionais(df):
     return dff
 
 # =========================
-# MÁSCARAS DE PERÍODO E DATA PARA CADA BASE
+# MÁSCARAS DE PERÍODO/DATA
 # =========================
-# Para LOJAS/CUPONS (usam df_lojas):
 mask_lojas = (
     df_lojas["data"].dt.year.between(anos_sel[0], anos_sel[1]) &
     df_lojas["data"].dt.month.between(meses_sel[0], meses_sel[1]) &
@@ -177,7 +188,6 @@ mask_lojas = (
 )
 df_lojas_filtrado = _aplica_filtros_adicionais(df_lojas.loc[mask_lojas].copy())
 
-# Para TRANSAÇÕES (retenção usa df_transacoes):
 mask_trans = (
     df_transacoes["data"].dt.year.between(anos_sel[0], anos_sel[1]) &
     df_transacoes["data"].dt.month.between(meses_sel[0], meses_sel[1]) &
@@ -185,7 +195,6 @@ mask_trans = (
 )
 df_trans_filtrado = _aplica_filtros_adicionais(df_transacoes.loc[mask_trans].copy())
 
-# Ano/Mês escolhidos para funções (use o fim do range)
 ano_escolhido = int(anos_sel[1])
 mes_escolhido = int(meses_sel[1])
 
@@ -201,22 +210,84 @@ if len(anos_disponiveis) == 1 or len(set(meses_no_range)) <= 1:
 aba1, aba2, aba3 = st.tabs(["Perfil dos Players", "Perfil Cupons", "Taxa de Retenção"])
 
 with aba1:
+    # Render normal
     render_aba_players(df_players)
 
+    # Exportação (um botão que gera e baixa)
+    st.subheader("Exportar relatório – Perfil dos Players")
+    params_report = {
+        "Perfil": "CEO",
+        "Anos": f"{anos_sel[0]}–{anos_sel[1]}",
+        "Meses": f"{meses_sel[0]}–{meses_sel[1]}",
+        "Período": f"{pd.to_datetime(d_ini).date()} a {pd.to_datetime(d_fim).date()}",
+        "Modo": modo,
+        "Lojas": filtro_nome or ["(todas)"],
+        "Categorias": filtro_categ or ["(todas)"],
+    }
+    if st.button("Gerar relatório (PDF) – Players"):
+        figs = render_aba_players(df_players, export=True) or {}
+        secoes = list(figs.items())
+        pdf = construir_pdf_relatorio(
+            titulo="Relatório – Perfil dos Players (CEO)",
+            params=params_report,
+            secoes=secoes,
+            resumo_kpis=None,
+            figs_per_page=6,  # 1 coluna (default no util), até 6 gráficos por página
+            cols=1,
+            cell_img_max_h_cm=8.5,
+        )
+        fname = f"relatorio_ceo_players_{datetime.now():%Y%m%d_%H%M}.pdf"
+        trigger_download(pdf, fname)
+        st.success("Relatório gerado e download iniciado.")
+
 with aba2:
-    # Usa a BASE DE LOJAS (gráficos de frequência, comparativos, cupons etc.)
+    # Render normal
     render_aba_perfil_cupons(
         df_filtrado=df_lojas_filtrado,
         ano_escolhido=ano_escolhido,
         mes_escolhido=mes_escolhido,
         modo=modo,
-        # componentes já usam 'nomes_lojas'/'categorias' internamente;
-        # aqui passamos os valores do sidebar:
         filtro_nome=filtro_nome or None,
-        filtro_tipo=filtro_categ or None,   # <— importante: passe como filtro_tipo para manter compatibilidade
+        filtro_tipo=filtro_categ or None,
     )
 
+    # Exportação (um botão que gera e baixa)
+    st.subheader("Exportar relatório – Perfil de Cupons/Capturas")
+    params_report = {
+        "Perfil": "CEO",
+        "Anos": f"{anos_sel[0]}–{anos_sel[1]}",
+        "Meses": f"{meses_sel[0]}–{meses_sel[1]}",
+        "Período": f"{pd.to_datetime(d_ini).date()} a {pd.to_datetime(d_fim).date()}",
+        "Modo": modo,
+        "Lojas": filtro_nome or ["(todas)"],
+        "Categorias": filtro_categ or ["(todas)"],
+    }
+    if st.button("Gerar relatório (PDF) – Cupons"):
+        figs = render_aba_perfil_cupons(
+            df_filtrado=df_lojas_filtrado,
+            ano_escolhido=ano_escolhido,
+            mes_escolhido=mes_escolhido,
+            modo=modo,
+            filtro_nome=filtro_nome or None,
+            filtro_tipo=filtro_categ or None,
+            export=True,
+        ) or {}
+        secoes = list(figs.items())
+        pdf = construir_pdf_relatorio(
+            titulo="Relatório – Perfil de Cupons (CEO)",
+            params=params_report,
+            secoes=secoes,
+            resumo_kpis=None,
+            figs_per_page=6,
+            cols=1,
+            cell_img_max_h_cm=8.5,
+        )
+        fname = f"relatorio_ceo_cupons_{datetime.now():%Y%m%d_%H%M}.pdf"
+        trigger_download(pdf, fname)
+        st.success("Relatório gerado e download iniciado.")
+
 with aba3:
+    # Render normal
     render_aba_perfil_transacoes(
         df_filtrado=df_trans_filtrado,
         ano_escolhido=ano_escolhido,
@@ -225,3 +296,38 @@ with aba3:
         filtro_nome=filtro_nome or None,
         filtro_tipo=filtro_categ or None,
     )
+
+    # Exportação (um botão que gera e baixa)
+    st.subheader("Exportar relatório – Taxa de Retenção")
+    params_report = {
+        "Perfil": "CEO",
+        "Anos": f"{anos_sel[0]}–{anos_sel[1]}",
+        "Meses": f"{meses_sel[0]}–{meses_sel[1]}",
+        "Período": f"{pd.to_datetime(d_ini).date()} a {pd.to_datetime(d_fim).date()}",
+        "Modo": "percentual (fixo no gráfico de defasagem)",
+        "Lojas": filtro_nome or ["(todas)"],
+        "Categorias": filtro_categ or ["(todas)"],
+    }
+    if st.button("Gerar relatório (PDF) – Retenção"):
+        figs = render_aba_perfil_transacoes(
+            df_filtrado=df_trans_filtrado,
+            ano_escolhido=ano_escolhido,
+            mes_escolhido=mes_escolhido,
+            modo=modo,
+            filtro_nome=filtro_nome or None,
+            filtro_tipo=filtro_categ or None,
+            export=True,
+        ) or {}
+        secoes = list(figs.items())
+        pdf = construir_pdf_relatorio(
+            titulo="Relatório – Taxa de Retenção (CEO)",
+            params=params_report,
+            secoes=secoes,
+            resumo_kpis=None,
+            figs_per_page=6,
+            cols=1,
+            cell_img_max_h_cm=8.5,
+        )
+        fname = f"relatorio_ceo_retencao_{datetime.now():%Y%m%d_%H%M}.pdf"
+        trigger_download(pdf, fname)
+        st.success("Relatório gerado e download iniciado.")
