@@ -20,13 +20,11 @@ def _fmt_br(x):
         return "—"
 
 def _kpis_repasse_cfo(df_rep: pd.DataFrame):
-    """KPIs focados em repasse (sem repetir receita geral)."""
     bruto = df_rep["valor_cupom"].sum() if "valor_cupom" in df_rep.columns else np.nan
     pic   = df_rep["repasse_picmoney"].sum() if "repasse_picmoney" in df_rep.columns else np.nan
     loja  = df_rep["repasse_lojista"].sum() if "repasse_lojista" in df_rep.columns else (
         bruto - pic if pd.notna(bruto) and pd.notna(pic) else np.nan
     )
-
     pct_pic  = (pic/bruto) * 100 if pd.notna(bruto) and bruto > 0 and pd.notna(pic) else np.nan
     pct_loja = (loja/bruto) * 100 if pd.notna(bruto) and bruto > 0 and pd.notna(loja) else np.nan
 
@@ -91,58 +89,80 @@ def _pizza_tipo_cupom(df_rep):
     )
     return fig
 
-def render_aba_repasse(df_filtrado: pd.DataFrame, lojas=None, categorias=None):
-    """Aba de Repasse: KPIs focados + séries (LINHAS) + rankings + pizza."""
+def render_aba_repasse(df_filtrado: pd.DataFrame, lojas=None, categorias=None, export: bool = False):
+    """
+    Aba de Repasse. Se export=True, retorna {titulo: fig}.
+    """
+    figs = {}
     dff = _aplica_filtros(df_filtrado, lojas, categorias)
     df_rep = prepare_repasse_cols(dff)
 
-    st.subheader("KPIs de Repasse")
-    _kpis_repasse_cfo(df_rep)
+    if not export:
+        st.subheader("KPIs de Repasse")
+        _kpis_repasse_cfo(df_rep)
 
-    # ===== Séries temporais (LINHAS) =====
-    st.markdown("### Séries Temporais de Repasse")
-    col1, col2 = st.columns(2)
+        st.markdown("### Séries Temporais de Repasse")
+        col1, col2 = st.columns(2)
+        with col1:
+            if {"data","repasse_lojista"}.issubset(df_rep.columns):
+                s = df_rep.copy()
+                s["dia"] = pd.to_datetime(s["data"], errors="coerce").dt.to_period("D").dt.to_timestamp()
+                g = (s.groupby("dia", as_index=False)["repasse_lojista"].sum().sort_values("dia"))
+                fig = px.line(g, x="dia", y="repasse_lojista", markers=True,
+                              title="Repasse ao Lojista por Dia (R$)", labels={"dia":"Dia","repasse_lojista":"R$"})
+                st.plotly_chart(fig, use_container_width=True)
+        with col2:
+            if {"data","repasse_picmoney"}.issubset(df_rep.columns):
+                s = df_rep.copy()
+                s["dia"] = pd.to_datetime(s["data"], errors="coerce").dt.to_period("D").dt.to_timestamp()
+                g = (s.groupby("dia", as_index=False)["repasse_picmoney"].sum().sort_values("dia"))
+                fig = px.line(g, x="dia", y="repasse_picmoney", markers=True,
+                              title="Comissão PicMoney por Dia (R$)", labels={"dia":"Dia","repasse_picmoney":"R$"})
+                st.plotly_chart(fig, use_container_width=True)
 
-    with col1:
-        if {"data","repasse_lojista"}.issubset(df_rep.columns):
-            s = df_rep.copy()
-            s["dia"] = pd.to_datetime(s["data"], errors="coerce").dt.to_period("D").dt.to_timestamp()
-            g = (s.groupby("dia", as_index=False)["repasse_lojista"].sum()
-                   .sort_values("dia"))
-            fig = px.line(
-                g, x="dia", y="repasse_lojista", markers=True,
-                title="Repasse ao Lojista por Dia (R$)",
-                labels={"dia":"Dia","repasse_lojista":"R$"}
-            )
-            st.plotly_chart(fig, use_container_width=True)
+        st.markdown("### Maiores Lojas")
+        c3, c4 = st.columns(2)
+        with c3:
+            fig = _col_lojas_por_valor(df_rep, top=15)
+            if fig: st.plotly_chart(fig, use_container_width=True)
+        with c4:
+            fig = _col_lojas_por_repasse_valor(df_rep, top=15)
+            if fig: st.plotly_chart(fig, use_container_width=True)
 
-    with col2:
-        if {"data","repasse_picmoney"}.issubset(df_rep.columns):
-            s = df_rep.copy()
-            s["dia"] = pd.to_datetime(s["data"], errors="coerce").dt.to_period("D").dt.to_timestamp()
-            g = (s.groupby("dia", as_index=False)["repasse_picmoney"].sum()
-                   .sort_values("dia"))
-            fig = px.line(
-                g, x="dia", y="repasse_picmoney", markers=True,
-                title="Comissão PicMoney por Dia (R$)",
-                labels={"dia":"Dia","repasse_picmoney":"R$"}
-            )
-            st.plotly_chart(fig, use_container_width=True)
+        c5, c6 = st.columns(2)
+        with c5:
+            fig = _col_lojas_por_repasse_pct(df_rep, top=15, min_valor=1000)
+            if fig: st.plotly_chart(fig, use_container_width=True)
+        with c6:
+            fig = _pizza_tipo_cupom(df_rep)
+            if fig: st.plotly_chart(fig, use_container_width=True)
+        return None
 
-    # ===== Rankings =====
-    st.markdown("### Maiores Lojas")
-    c3, c4 = st.columns(2)
-    with c3:
-        fig = _col_lojas_por_valor(df_rep, top=15)
-        if fig: st.plotly_chart(fig, use_container_width=True)
-    with c4:
-        fig = _col_lojas_por_repasse_valor(df_rep, top=15)
-        if fig: st.plotly_chart(fig, use_container_width=True)
+    # ----- Modo export: apenas coletar figuras -----
+    if {"data","repasse_lojista"}.issubset(df_rep.columns):
+        s = df_rep.copy()
+        s["dia"] = pd.to_datetime(s["data"], errors="coerce").dt.to_period("D").dt.to_timestamp()
+        g = (s.groupby("dia", as_index=False)["repasse_lojista"].sum().sort_values("dia"))
+        figs["Repasse ao Lojista por Dia (R$)"] = px.line(
+            g, x="dia", y="repasse_lojista", markers=True,
+            title="Repasse ao Lojista por Dia (R$)", labels={"dia":"Dia","repasse_lojista":"R$"}
+        )
+    if {"data","repasse_picmoney"}.issubset(df_rep.columns):
+        s = df_rep.copy()
+        s["dia"] = pd.to_datetime(s["data"], errors="coerce").dt.to_period("D").dt.to_timestamp()
+        g = (s.groupby("dia", as_index=False)["repasse_picmoney"].sum().sort_values("dia"))
+        figs["Comissão PicMoney por Dia (R$)"] = px.line(
+            g, x="dia", y="repasse_picmoney", markers=True,
+            title="Comissão PicMoney por Dia (R$)", labels={"dia":"Dia","repasse_picmoney":"R$"}
+        )
 
-    c5, c6 = st.columns(2)
-    with c5:
-        fig = _col_lojas_por_repasse_pct(df_rep, top=15, min_valor=1000)
-        if fig: st.plotly_chart(fig, use_container_width=True)
-    with c6:
-        fig = _pizza_tipo_cupom(df_rep)
-        if fig: st.plotly_chart(fig, use_container_width=True)
+    f = _col_lojas_por_valor(df_rep, top=15)
+    if f: figs["Maiores Lojas por Valor de Cupons (R$)"] = f
+    f = _col_lojas_por_repasse_valor(df_rep, top=15)
+    if f: figs["Maiores Lojas por Repasse ao Lojista (R$)"] = f
+    f = _col_lojas_por_repasse_pct(df_rep, top=15, min_valor=1000)
+    if f: figs["Participação do Lojista (%) – Maiores Lojas"] = f
+    f = _pizza_tipo_cupom(df_rep)
+    if f: figs["Composição por Tipo de Cupom (R$)"] = f
+
+    return figs

@@ -1,0 +1,187 @@
+\documentclass[12pt]{article}
+
+% Idioma e codificação
+\usepackage[brazil]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+% Fonte semelhante à Arial
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}  % Usa Helvetica (Arial) em todo o texto
+
+% Espaçamento e margens
+\usepackage{setspace}
+\onehalfspacing
+\usepackage{geometry}
+\geometry{a4paper, left=2cm, right=2cm, top=2cm, bottom=2cm}
+\usepackage{float}
+
+
+% Parágrafo
+\usepackage{indentfirst}
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0pt}
+
+% Títulos personalizados
+\usepackage{titlesec}
+\titleformat{\section}
+  {\normalfont\sffamily\bfseries\fontsize{20}{20}\selectfont} % Arial 20 em negrito
+  {\thesection}{1em}{} % remove numeração se quiser
+\titleformat{\subsection}
+  {\normalfont\sffamily\bfseries\fontsize{14}{14}\selectfont}
+  {\thesubsection}{1em}{}
+
+% Legendas (captions) personalizadas - Arial 10
+\usepackage[font={sf,footnotesize},labelfont=bf,labelsep=colon,justification=centering]{caption}
+
+  
+
+\begin{document}
+\begin{center}
+\textbf{Fundação Escola de Comércio Álvares Penteado (FECAP)}\\
+\textbf{Curso de Ciência da Computação - 4º Semestre}\\[2cm]
+
+\vspace*{\fill}
+\textbf{\Large Cálculo de Intervalo de Confiança (IC)}\\[0.5cm]
+\textbf{Entrega 2 – Análise Inferencial de Dados}\\[2cm]
+\end{center}
+
+
+\noindent\hspace*{6cm}\textbf{Caroliny Rossi Bittencourt – 24025959}\\
+\hspace*{6cm}\textbf{Rafael Alves dos Santos Guimarães – 24025724}\\
+\hspace*{6cm}\textbf{Duda Lucena Miguel – 24025889}\\
+\hspace*{6cm}\textbf{Isadora Teixeira Santoma – 24026458}\\[2cm]
+
+\vspace*{\fill}
+
+\begin{center}
+\vfill
+\textbf{São Paulo – 2025}
+\end{center}
+
+\newpage
+\onehalfspacing
+
+\section*{Introdução}
+
+O intervalo de confiança (IC) é uma ferramenta estatística utilizada para estimar o intervalo no qual se encontra o valor verdadeiro de uma média ou proporção populacional, com determinado nível de confiança, geralmente 95\%.  
+Em termos práticos, o IC expressa a precisão de uma estimativa: quanto menor sua amplitude, maior a confiança de que o valor obtido representa bem a população.
+
+No contexto empresarial, o uso de intervalos de confiança é essencial para apoiar a tomada de decisões. Ele permite avaliar a variabilidade de métricas como vendas, lucros ou, neste caso, o uso de cupons por loja. Assim, gestores podem inferir tendências e níveis de desempenho sem depender apenas de observações pontuais.
+
+\section*{Metodologia}
+
+Foi utilizada uma base de dados fornecida pela própria empresa, \textbf{PicMoney}, contendo informações sobre o uso de cupons de diferentes estabelecimentos comerciais parceiros da plataforma.
+O cálculo do intervalo de confiança foi realizado a partir da média de cupons utilizados por loja, considerando um nível de confiança de 95\%, com base na distribuição normal.
+
+O arquivo foi analisado no mesmo diretório do presente documento, utilizando a linguagem de programação \textbf{Python}, com o auxílio das bibliotecas \textbf{Pandas} e \textbf{NumPy} para manipulação e análise estatística dos dados. O Script de códigos desse cálculo também se encontra no mesmo diretório deste documento, tendo como nome "main.ipynb" disponível para eventual consulta ou reprodução dos resultados obtidos.  
+Para executá-lo, é necessário ter o \textbf{Python} instalado na máquina e utilizar um ambiente de desenvolvimento, como o \textbf{VSCode} ou outra IDE de preferência.  
+Após configurar o ambiente, devem ser instaladas as bibliotecas utilizadas por meio do comando:
+
+\begin{center}
+\texttt{pip install pandas numpy}
+\end{center}
+
+Em seguida, basta abrir o arquivo do código, garantir que o diretório de trabalho esteja corretamente configurado, e executar o programa para que os cálculos sejam realizados automaticamente conforme os parâmetros apresentados neste relatório.
+
+\subsection*{Metodo de Cálculo}
+Para o cálculo do intervalo de confiança da média, foram utilizados os seguintes parâmetros:
+
+\begin{itemize}
+    \item Média amostral ($\bar{x}$)
+    \item Desvio padrão ($s$)
+    \item Número de observações ($n$)
+    \item Valor crítico de $Z$ para 95\% de confiança (1,96)
+\end{itemize}
+
+A fórmula aplicada foi:
+
+\[
+IC = [\bar{x} - Z \times \frac{s}{\sqrt{n}} ; \bar{x} + Z \times \frac{s}{\sqrt{n}}]
+\]
+
+onde:
+\begin{itemize}
+    \item $\bar{x}$ representa a média amostral de cupons por loja;
+    \item $s$ é o desvio padrão das observações;
+    \item $n$ é o número total de lojas analisadas.
+\end{itemize}
+
+Dessa forma, obtevem-se o intervalo de confiança da média de cupons por loja com base nos dados disponíveis
+
+\section*{Desenvolvimento}
+
+Ao analisarmos os dados reais da amostra, observamos que a maioria das lojas apresentou valores de cupons próximos da média geral, situada em aproximadamente \textbf{3025 cupons por loja}, como exposto na Tabela 1 a seguir:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|c|}
+\hline
+\textbf{Nome do Estabelecimento} & \textbf{Cupons Utilizados} \\
+\hline
+Açaí no Ponto & 2777 \\
+Burger King & 2585 \\
+Café Cultura & 3116 \\
+Carrefour Express & 3073 \\
+Casas Bahia & 2007 \\
+Churrascaria Boi Preto & 2912 \\
+Clube Pinheiros & 3079 \\
+Droga Raia & 4271 \\
+Drogaria São Paulo & 4310 \\
+Drogasil & 4338 \\
+Extra & 3090 \\
+Fleury & 3087 \\
+Forever 21 & 3144 \\
+Habib's & 2630 \\
+Just Run & 3061 \\
+Lavoisier & 3185 \\
+Madero & 2883 \\
+Magazine Luiza & 1980 \\
+McDonald's & 2699 \\
+Octavio Café & 3162 \\
+Outback & 2837 \\
+Ponto & 1946 \\
+Pão de Açúcar & 3075 \\
+Renner & 3161 \\
+Riachuelo & 3121 \\
+Ráscal & 2914 \\
+Sabin & 3217 \\
+Selfit & 3098 \\
+Sesc Carmo & 3120 \\
+Sesc Paulista & 3103 \\
+Smart Fit & 3147 \\
+Starbucks & 3084 \\
+Subway & 2631 \\
+\hline
+\textbf{Média geral} & \textbf{3025,55} \\
+\hline
+\end{tabular}
+\caption{Quantidade de cupons utilizados por loja}
+\end{table}
+
+\vspace{0.5cm}
+
+\newpage
+\onehalfspacing
+
+O cálculo do intervalo de confiança resultou em
+
+\[
+\textbf{IC = [2842,99 ; 3208,10]}
+\]
+
+o que indica que, com 95\% de confiança, a média verdadeira de cupons por loja encontra-se dentro desse intervalo.
+
+
+\section*{Conclusão}
+
+Com base nessa análise, foi possível chegar a uma conclusão prática aplicada ao contexto empresarial:  
+embora exista certa variação entre as lojas, a maioria mantém desempenho semelhante, o que demonstra uma consistência estatística no uso dos cupons.  
+Alguns estabelecimentos, como as redes de farmácias (Droga Raia, Drogaria São Paulo e Drogasil), apresentaram valores significativamente acima do limite superior do intervalo, indicando maior engajamento com a estratégia de cupons.  
+Por outro lado, lojas como Casas Bahia, Ponto e Magazine Luiza ficaram abaixo do limite inferior, sugerindo menor adesão à campanha.
+
+Esses resultados reforçam a utilidade do intervalo de confiança como instrumento para a interpretação de tendências e identificação de outliers, fornecendo base sólida para que a empresa realize ajustes estratégicos de acordo com o comportamento de cada segmento.
+
+
+
+\end{document}

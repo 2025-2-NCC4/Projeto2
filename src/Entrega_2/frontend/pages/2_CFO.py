@@ -1,69 +1,136 @@
 import streamlit as st
 import pandas as pd
-import sys
-from pathlib import Path
+from datetime import datetime
 
-# ---------- Config da página ----------
-st.set_page_config(page_title="Dashboard – CFO", layout="wide")
-st.title("Dashboard – CFO")
+import utils.thema_plotly
 
-# ---------- Permitir import de components/charts quando rodar de /pages ----------
-HERE = Path(__file__).resolve()
-PROJECT_ROOT = HERE.parent.parent  
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+# --- Tipos de figuras suportadas + helper de debug/filtragem ---
+from typing import Dict, Any, List, Tuple
+try:
+    import plotly.graph_objects as go
+except Exception:
+    go = None
+try:
+    import matplotlib.figure as mpl_fig
+except Exception:
+    mpl_fig = None
+
+def _debug_e_filtrar_figs(figs: Dict[str, Any]) -> List[Tuple[str, Any]]:
+    """Mostra os tipos no app e retorna apenas (titulo, figura) suportados."""
+    tipos = {t: (type(f).__name__ if f is not None else "NoneType") for t, f in (figs or {}).items()}
+    with st.expander("DEBUG: tipos retornados pelas funções de aba", expanded=False):
+        st.json(tipos)
+
+    secoes: List[Tuple[str, Any]] = []
+    for t, f in (figs or {}).items():
+        if (go is not None and isinstance(f, go.Figure)) or (mpl_fig is not None and isinstance(f, mpl_fig.Figure)):
+            secoes.append((t, f))
+    if not secoes:
+        st.warning("Nenhuma figura válida retornada (Plotly ou Matplotlib). Verifique a função da aba quando export=True.")
+    return secoes
 
 from components.aba_financeiro.aba_financeiro import render_aba_financeiro
 from components.aba_repasse.aba_repasse import render_aba_repasse
 from components.aba_liquidez.aba_liquidez import render_aba_liquidez
 
-# =========================
-# Carga das bases 
-# =========================
-df = None
-for p in ("base_de_dados/base_transacoes.csv", "base_transacoes.csv"):
-    try:
-        df = pd.read_csv(p)
-        break
-    except Exception:
-        pass
+from utils.report_export import construir_pdf_relatorio  # PDF
+from utils.auto_download import trigger_download          # download automático
+from api_client import get_all_json_df
 
-if df is None:
-    st.error("Não foi possível carregar 'base_transacoes.csv'.")
+# ---------- Config da página ----------
+st.set_page_config(page_title="Dashboard – CFO", layout="wide")
+st.title("Dashboard - CFO")
+
+hide_menu_style = """
+    <style>
+    div[data-testid="stSidebarNav"] li:first-child {display: none;}
+    </style>
+"""
+st.markdown(hide_menu_style, unsafe_allow_html=True)
+
+# =========================
+# Carga de bases via API (cacheadas)
+# =========================
+CACHE_TTL = 3600  # 1 hora
+
+@st.cache_data(show_spinner=False, ttl=CACHE_TTL)
+def load_players():
+    return get_all_json_df("/players", max_pages=None)
+
+@st.cache_data(show_spinner=False, ttl=CACHE_TTL)
+def load_lojas():
+    return get_all_json_df("/lojas", max_pages=None)
+
+@st.cache_data(show_spinner=False, ttl=CACHE_TTL)
+def load_transacoes():
+    return get_all_json_df("/transacoes", max_pages=None)
+
+@st.cache_data(show_spinner=False, ttl=CACHE_TTL)
+def load_simulacao():
+    return get_all_json_df("/simulacao", max_pages=None)
+
+def _safe(call, nome: str) -> pd.DataFrame:
+    try:
+        df = call()
+        return df if isinstance(df, pd.DataFrame) else pd.DataFrame()
+    except Exception as e:
+        st.error(f"Erro ao carregar {nome}: {e}")
+        return pd.DataFrame()
+
+# ---------- Variáveis finais ----------
+df_players    = _safe(load_players,    "players")
+df_lojas      = _safe(load_lojas,      "lojas")
+df_transacoes = _safe(load_transacoes, "transações")
+df_simulacao  = _safe(load_simulacao,  "simulação")
+
+# ---------- Botão para forçar atualização ----------
+if st.button("↻ Atualizar dados"):
+    st.cache_data.clear()
+    st.rerun()
+
+# =====================================================
+# Base de trabalho do CFO: transações
+# =====================================================
+df = df_transacoes.copy()
+
+if df.empty:
+    st.warning("Não há dados em **transações** para exibir.")
     st.stop()
 
-# ---------- Normalizações para garantir filtros ----------
-# normaliza nomes e chaves
-df.columns = [c.strip().lower() for c in df.columns]
+# ---------- Normalizações básicas ----------
+df.columns = [str(c).strip().lower() for c in df.columns]
+
 if "nome_estabelecimento" in df.columns:
     df["nome_estabelecimento"] = df["nome_estabelecimento"].astype(str).str.strip()
 
-# datas coerentes
 if "data" not in df.columns:
-    st.error("A base de transações não possui a coluna 'data'.")
+    st.error("A base de transações não possui a coluna obrigatória **'data'**.")
     st.stop()
+
 df["data"] = pd.to_datetime(df["data"], errors="coerce")
 df.dropna(subset=["data"], inplace=True)
+if df.empty:
+    st.warning("Após normalização de datas, não restaram linhas válidas.")
+    st.stop()
 
-# harmoniza a coluna de categoria em 'categoria_estabelecimento'
 if "categoria_estabelecimento" not in df.columns:
     for alt in ("categoria", "categoria_loja", "categoria_estab", "cat"):
         if alt in df.columns:
-            df["categoria_estabelecimento"] = df[alt]
+            df["categoria_estabelecimento"] = df[alt].astype(str).str.strip()
             break
 
-# =========================
-# Filtros de período (sidebar)
-# =========================
+# =====================================================
+# Filtros (sidebar)
+# =====================================================
 st.sidebar.markdown("### Filtros de período")
 
-df_base = df.copy()
-df_base["data"] = pd.to_datetime(df_base["data"], errors="coerce")
-df_base = df_base.dropna(subset=["data"])
-min_dt = df_base["data"].min().normalize()
-max_dt = df_base["data"].max().normalize()
+min_dt = df["data"].min().normalize()
+max_dt = df["data"].max().normalize()
 
-anos_disponiveis = sorted(df_base["data"].dt.year.unique().astype(int))
+anos_disponiveis = sorted(df["data"].dt.year.dropna().astype(int).unique())
+if not anos_disponiveis:
+    st.warning("Não há anos disponíveis na coluna 'data'.")
+    st.stop()
 
 meses_pt = {
     1: "Janeiro", 2: "Fevereiro", 3: "Março", 4: "Abril",
@@ -87,14 +154,14 @@ else:
         key="ano_intervalo_cfo",
     )
 
-# Mês dentro do range de anos
+# Meses do range
 meses_no_range = (
-    df_base[df_base["data"].dt.year.between(anos_sel[0], anos_sel[1])]
-    ["data"].dt.month.unique()
+    df[df["data"].dt.year.between(anos_sel[0], anos_sel[1])]["data"].dt.month.unique()
 )
-meses_no_range = sorted([int(m) for m in (meses_no_range or list(range(1, 13)))])
-opcoes_meses_pt = [meses_pt[m] for m in meses_no_range] if meses_no_range else list(meses_pt.values())
+meses_no_range = sorted([int(m) for m in (meses_no_range if len(meses_no_range) else range(1, 13))])
+opcoes_meses_pt = [meses_pt[m] for m in meses_no_range]
 
+# Mês (intervalo)
 if len(set(meses_no_range)) <= 1 and meses_no_range:
     mes_unico_num = meses_no_range[0]
     st.sidebar.markdown(f"**Mês (fixo):** {meses_pt[mes_unico_num]}")
@@ -118,7 +185,6 @@ datas_sel = st.sidebar.date_input(
     key="dias_intervalo_cfo",
 )
 
-# Normaliza datas (aceita único dia)
 if isinstance(datas_sel, (tuple, list)):
     if len(datas_sel) == 2:
         d_ini, d_fim = datas_sel
@@ -134,39 +200,129 @@ d_fim = pd.to_datetime(d_fim).normalize()
 if d_ini > d_fim:
     d_ini, d_fim = d_fim, d_ini
 
-# ---------- Filtros adicionais ----------
+# Filtros adicionais
 st.sidebar.markdown("---")
 st.sidebar.markdown("### Filtros de Loja/Categoria")
 
 lojas = sorted(df["nome_estabelecimento"].dropna().astype(str).str.strip().unique()) if "nome_estabelecimento" in df.columns else []
-# tenta popular categorias de forma robusta
-categorias = []
-if "categoria_estabelecimento" in df.columns:
-    categorias = sorted(df["categoria_estabelecimento"].dropna().astype(str).str.strip().unique())
+categorias = sorted(df["categoria_estabelecimento"].dropna().astype(str).str.strip().unique()) if "categoria_estabelecimento" in df.columns else []
 
 filtro_lojas = st.sidebar.multiselect("Lojas", lojas, default=[])
 filtro_cat   = st.sidebar.multiselect("Categorias", categorias, default=[])
 
-# ---------- Aplica máscara robusta ----------
+# Aplica máscara
 mask = (
     df["data"].dt.year.between(anos_sel[0], anos_sel[1]) &
     df["data"].dt.month.between(meses_sel[0], meses_sel[1]) &
     df["data"].dt.normalize().between(d_ini, d_fim)
 )
 df_filtrado = df.loc[mask].copy()
-if filtro_lojas:
-    df_filtrado = df_filtrado[df_filtrado["nome_estabelecimento"].astype(str).str.strip().isin(filtro_lojas)]
-if filtro_cat and "categoria_estabelecimento" in df_filtrado.columns:
-    df_filtrado = df_filtrado[df_filtrado["categoria_estabelecimento"].astype(str).str.strip().isin(filtro_cat)]
 
-# ---------- Abas (Financeiro primeiro) ----------
+if filtro_lojas and "nome_estabelecimento" in df_filtrado.columns:
+    df_filtrado = df_filtrado[
+        df_filtrado["nome_estabelecimento"].astype(str).str.strip().isin(filtro_lojas)
+    ]
+
+if filtro_cat and "categoria_estabelecimento" in df_filtrado.columns:
+    df_filtrado = df_filtrado[
+        df_filtrado["categoria_estabelecimento"].astype(str).str.strip().isin(filtro_cat)
+    ]
+
+if df_filtrado.empty:
+    st.info("Nenhum dado encontrado para os filtros selecionados.")
+
+# =====================================================
+# Abas principais
+# =====================================================
 tab1, tab2, tab3 = st.tabs(["Financeiro", "Repasse", "Liquidez"])
 
+# ---------- parâmetros comuns para o PDF ----------
+params_base = {
+    "Perfil": "CFO",
+    "Anos": f"{anos_sel[0]}–{anos_sel[1]}",
+    "Meses": f"{meses_sel[0]}–{meses_sel[1]}",
+    "Período": f"{pd.to_datetime(d_ini).date()} a {pd.to_datetime(d_fim).date()}",
+    "Lojas": filtro_lojas or ["(todas)"],
+    "Categorias": filtro_cat or ["(todas)"],
+}
+
 with tab1:
+    # Render normal
     render_aba_financeiro(df_filtrado, lojas=filtro_lojas or None, categorias=filtro_cat or None)
 
+    # Exportação (um botão que gera e baixa)
+    st.subheader("Exportar relatório – Financeiro")
+    if st.button("Gerar relatório (PDF) – Financeiro"):
+        figs = render_aba_financeiro(
+            df_filtrado,
+            lojas=filtro_lojas or None,
+            categorias=filtro_cat or None,
+            export=True
+        ) or {}
+        secoes = _debug_e_filtrar_figs(figs)
+        pdf = construir_pdf_relatorio(
+            titulo="Relatório – Financeiro (CFO)",
+            params=params_base,
+            secoes=secoes,
+            resumo_kpis=None,
+            figs_per_page=6,
+            cols=1,
+            cell_img_max_h_cm=8.5,
+        )
+        fname = f"relatorio_cfo_financeiro_{datetime.now():%Y%m%d_%H%M}.pdf"
+        trigger_download(pdf, fname)
+        st.success("Relatório gerado e download iniciado.")
+
 with tab2:
+    # Render normal
     render_aba_repasse(df_filtrado, lojas=filtro_lojas or None, categorias=filtro_cat or None)
 
+    # Exportação (um botão que gera e baixa)
+    st.subheader("Exportar relatório – Repasse")
+    if st.button("Gerar relatório (PDF) – Repasse"):
+        figs = render_aba_repasse(
+            df_filtrado,
+            lojas=filtro_lojas or None,
+            categorias=filtro_cat or None,
+            export=True
+        ) or {}
+        secoes = _debug_e_filtrar_figs(figs)
+        pdf = construir_pdf_relatorio(
+            titulo="Relatório – Repasse (CFO)",
+            params=params_base,
+            secoes=secoes,
+            resumo_kpis=None,
+            figs_per_page=6,
+            cols=1,
+            cell_img_max_h_cm=8.5,
+        )
+        fname = f"relatorio_cfo_repasse_{datetime.now():%Y%m%d_%H%M}.pdf"
+        trigger_download(pdf, fname)
+        st.success("Relatório gerado e download iniciado.")
+
 with tab3:
+    # Render normal
     render_aba_liquidez(df_filtrado, lojas=filtro_lojas or None, categorias=filtro_cat or None)
+
+    # Exportação (um botão que gera e baixa)
+    st.subheader("Exportar relatório – Liquidez")
+    if st.button("Gerar relatório (PDF) – Liquidez"):
+        figs = render_aba_liquidez(
+            df_filtrado,
+            lojas=filtro_lojas or None,
+            categorias=filtro_cat or None,
+            export=True
+        ) or {}
+        secoes = _debug_e_filtrar_figs(figs)
+        pdf = construir_pdf_relatorio(
+            titulo="Relatório – Liquidez (CFO)",
+            params=params_base,
+            secoes=secoes,
+            resumo_kpis=None,
+            figs_per_page=6,
+            cols=1,
+            cell_img_max_h_cm=8.5,
+        )
+        fname = f"relatorio_cfo_liquidez_{datetime.now():%Y%m%d_%H%M}.pdf"
+        trigger_download(pdf, fname)
+        st.success("Relatório gerado e download iniciado.")

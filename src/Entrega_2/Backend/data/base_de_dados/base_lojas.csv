@@ -1,4 +1,4 @@
-﻿numero_celular,data_captura,tipo_cupom,tipo_loja,local_captura,latitude,longitude,nome_loja,endereco_loja,valor_compra,valor_cupom
+﻿celular,data,tipo_cupom,categoria_estabelecimento,local_captura,latitude,longitude,nome_estabelecimento,endereco_estabelecimento,valor_compra,valor_cupom
 (41) 96047-8110,2025-07-05,Produto,Supermercado,Calçada aleatória,-23.563.850.985.754.000,-4.665.004.147.929.030,Pão de Açúcar,"Rua Pamplona, 1704",834.43,28.21
 (11) 94020-8306,2025-07-12,Desconto,Supermercado,Calçada aleatória,-2.356.380.569.343.850,-4.664.954.309.104.300,Pão de Açúcar,"Rua Pamplona, 1704",884.21,398.81
 (11) 92863-4530,2025-07-19,Produto,,Shopping Cidade São Paulo,-23.563.227.246.012.400,-4.665.237.324.108.700,Kalunga,"Rua Augusta, 2220",903.79,48.43
